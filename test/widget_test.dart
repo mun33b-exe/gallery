@@ -60,18 +60,20 @@ void main() {
       // Returned to GalleryScreen
       expect(find.byType(GalleryScreen), findsOneWidget);
 
-      // Tap Settings button in header to visit AppShell
+      // Tap Settings button in header
       await tester.tap(find.byIcon(Icons.settings_outlined));
-      await tester.pump();
-      await tester.pump(const Duration(milliseconds: 400));
+      await tester.pumpAndSettle();
 
-      expect(find.text('AI Gallery Foundation'), findsOneWidget);
-      expect(find.text('Demo Creator'), findsOneWidget);
+      expect(find.text('Settings'), findsOneWidget);
 
-      // Tap Sign Out button
+      // Scroll and tap Sign Out button
+      await tester.ensureVisible(find.text('Sign Out'));
       await tester.tap(find.text('Sign Out'));
-      await tester.pump();
-      await tester.pump(const Duration(milliseconds: 400));
+      await tester.pumpAndSettle();
+
+      // Confirm in dialog
+      await tester.tap(find.widgetWithText(TextButton, 'Sign Out'));
+      await tester.pumpAndSettle();
 
       // Redirected back to LoginScreen
       expect(find.byType(LoginScreen), findsOneWidget);

@@ -13,8 +13,9 @@ import '../../features/auth/presentation/screens/splash_screen.dart';
 import '../../features/gallery/presentation/cubit/gallery_cubit.dart';
 import '../../features/gallery/presentation/screens/gallery_screen.dart';
 import '../../features/gallery/presentation/screens/photo_viewer_screen.dart';
+import '../../features/profile/presentation/screens/profile_screen.dart';
+import '../../features/profile/presentation/screens/settings_screen.dart';
 import '../../features/search/presentation/screens/search_screen.dart';
-import '../app_shell.dart';
 
 /// Helper to convert a Stream into a Listenable for GoRouter refresh.
 class GoRouterRefreshStream extends ChangeNotifier {
@@ -43,6 +44,7 @@ class AppRouter {
   static const String homePath = '/home';
   static const String photoViewerPath = '/photo-viewer';
   static const String searchPath = '/search';
+  static const String profilePath = '/profile';
   static const String settingsPath = '/settings';
 
   static GoRouter createRouter(AuthCubit authCubit) {
@@ -117,8 +119,12 @@ class AppRouter {
           builder: (context, state) => const SearchScreen(),
         ),
         GoRoute(
+          path: profilePath,
+          builder: (context, state) => const ProfileScreen(),
+        ),
+        GoRoute(
           path: settingsPath,
-          builder: (context, state) => const AppShell(),
+          builder: (context, state) => const SettingsScreen(),
         ),
       ],
     );

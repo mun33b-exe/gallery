@@ -86,6 +86,6 @@ flutter run
 - [x] **Phase 3 — Device photo access and gallery foundation**
 - [x] **Phase 4 — Photo viewer and basic photo interactions**
 - [x] **Phase 5 — Basic categories and filtering**
-- [x] **Phase 6 — AI-search frontend scaffold** (Completed, ready for audit)
-- [ ] **Phase 7 — Profile, settings, and premium-readiness foundation**
+- [x] **Phase 6 — AI-search frontend scaffold**
+- [x] **Phase 7 — Profile, settings, and premium-readiness foundation** (Completed, ready for audit)
 - [ ] **Phase 8 — Quality, performance, accessibility, and integration readiness**

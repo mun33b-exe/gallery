@@ -1,17 +1,32 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../core/services/preferences_service.dart';
 import 'app_theme.dart';
 import 'theme_state.dart';
 
 /// Cubit responsible for managing the application's active theme.
 class ThemeCubit extends Cubit<ThemeState> {
-  ThemeCubit({AppThemeDefinition? initialTheme})
-    : super(ThemeState(selectedTheme: initialTheme ?? AppThemes.defaultTheme));
+  final PreferencesService? _preferencesService;
 
-  /// Selects a theme by its definition.
+  ThemeCubit({
+    AppThemeDefinition? initialTheme,
+    PreferencesService? preferencesService,
+  }) : _preferencesService = preferencesService,
+       super(
+         ThemeState(
+           selectedTheme:
+               initialTheme ??
+               (preferencesService?.getThemeId() != null
+                   ? AppThemes.getById(preferencesService!.getThemeId()!)
+                   : AppThemes.defaultTheme),
+         ),
+       );
+
+  /// Selects a theme by its definition and persists it if PreferencesService is configured.
   void selectTheme(AppThemeDefinition theme) {
     if (state.selectedTheme.id != theme.id) {
       emit(ThemeState(selectedTheme: theme));
+      _preferencesService?.setThemeId(theme.id);
     }
   }
 

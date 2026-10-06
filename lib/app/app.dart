@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
+import '../core/services/preferences_service.dart';
 import '../features/auth/data/mock_auth_repository.dart';
 import '../features/auth/domain/auth_repository.dart';
 import '../features/auth/presentation/cubit/auth_cubit.dart';
@@ -21,12 +22,14 @@ class GalleryApp extends StatefulWidget {
   final AuthRepository? authRepository;
   final PhotoRepository? photoRepository;
   final AiPhotoSearchRepository? searchRepository;
+  final PreferencesService? preferencesService;
 
   const GalleryApp({
     super.key,
     this.authRepository,
     this.photoRepository,
     this.searchRepository,
+    this.preferencesService,
   });
 
   @override
@@ -53,7 +56,7 @@ class _GalleryAppState extends State<GalleryApp> {
     _authCubit = AuthCubit(authRepository: _authRepository);
     _galleryCubit = GalleryCubit(photoRepository: _photoRepository);
     _searchCubit = SearchCubit(searchRepository: _searchRepository);
-    _themeCubit = ThemeCubit();
+    _themeCubit = ThemeCubit(preferencesService: widget.preferencesService);
     _router = AppRouter.createRouter(_authCubit);
   }
 
