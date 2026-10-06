@@ -1,5 +1,6 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../domain/photo_model.dart';
 import '../../domain/photo_repository.dart';
 import 'gallery_state.dart';
 
@@ -92,5 +93,55 @@ class GalleryCubit extends Cubit<GalleryState> {
   /// Launches device application settings.
   Future<void> openAppSettings() async {
     await photoRepository.openAppSettings();
+  }
+
+  /// Toggles favorite status on a photo and updates the loaded collection.
+  Future<void> toggleFavorite(PhotoModel photo) async {
+    final currentState = state;
+    if (currentState is! GalleryLoaded) return;
+
+    final updatedPhoto = photo.copyWith(isFavorite: !photo.isFavorite);
+    final updatedList = currentState.photos.map((p) {
+      return p.id == photo.id ? updatedPhoto : p;
+    }).toList();
+
+    emit(currentState.copyWith(photos: updatedList));
+
+    try {
+      await photoRepository.toggleFavorite(photo);
+    } catch (_) {
+      // Revert if repository operation fails
+      emit(currentState);
+    }
+  }
+
+  /// Removes a photo from the active collection (e.g. after deletion).
+  Future<void> removePhoto(String photoId) async {
+    final currentState = state;
+    if (currentState is! GalleryLoaded) return;
+
+    final targetPhoto = currentState.photos.firstWhere(
+      (p) => p.id == photoId,
+      orElse: () => PhotoModel(
+        id: photoId,
+        width: 0,
+        height: 0,
+        createDateTime: DateTime.now(),
+      ),
+    );
+
+    final updatedList = currentState.photos
+        .where((p) => p.id != photoId)
+        .toList();
+
+    if (updatedList.isEmpty) {
+      emit(GalleryEmpty(isLimitedPermission: currentState.isLimitedPermission));
+    } else {
+      emit(currentState.copyWith(photos: updatedList));
+    }
+
+    try {
+      await photoRepository.deletePhoto(targetPhoto);
+    } catch (_) {}
   }
 }

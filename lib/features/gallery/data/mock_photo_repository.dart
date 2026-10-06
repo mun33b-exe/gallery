@@ -154,4 +154,42 @@ class MockPhotoRepository implements PhotoRepository {
   Future<void> openAppSettings() async {
     appSettingsOpened = true;
   }
+
+  @override
+  Future<Uint8List?> getFullPhoto(
+    String photoId, {
+    int maxWidth = 2048,
+    int maxHeight = 2048,
+  }) async {
+    if (simulatedDelay > Duration.zero) {
+      await Future<void>.delayed(simulatedDelay);
+    }
+    return kMockThumbnailBytes;
+  }
+
+  @override
+  Future<bool> toggleFavorite(PhotoModel photo) async {
+    if (simulatedDelay > Duration.zero) {
+      await Future<void>.delayed(simulatedDelay);
+    }
+    final index = _photos.indexWhere((p) => p.id == photo.id);
+    if (index != -1) {
+      final updated = _photos[index].copyWith(
+        isFavorite: !_photos[index].isFavorite,
+      );
+      _photos[index] = updated;
+      return true;
+    }
+    return false;
+  }
+
+  @override
+  Future<bool> deletePhoto(PhotoModel photo) async {
+    if (simulatedDelay > Duration.zero) {
+      await Future<void>.delayed(simulatedDelay);
+    }
+    final initialLen = _photos.length;
+    _photos.removeWhere((p) => p.id == photo.id);
+    return _photos.length < initialLen;
+  }
 }

@@ -11,6 +11,7 @@ import '../../../../core/widgets/adaptive/adaptive_progress_indicator.dart';
 import '../cubit/gallery_cubit.dart';
 import '../cubit/gallery_state.dart';
 import '../widgets/photo_thumbnail_tile.dart';
+import 'photo_viewer_screen.dart';
 
 /// Responsive, platform-adaptive Gallery Screen.
 /// Strictly enforces thumbnail loading, responsive column adaptation,
@@ -408,7 +409,13 @@ class _GalleryScreenState extends State<GalleryScreen> {
                 photo: photo,
                 photoRepository: photoRepo,
                 onTap: () {
-                  // Photo selection hook for Phase 4
+                  context.push(
+                    '/photo-viewer',
+                    extra: PhotoViewerArgs(
+                      photos: state.photos,
+                      initialIndex: index,
+                    ),
+                  );
                 },
               );
             }, childCount: state.photos.length),

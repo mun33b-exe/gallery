@@ -5,6 +5,7 @@ import 'package:gallery/features/auth/data/mock_auth_repository.dart';
 import 'package:gallery/features/auth/presentation/screens/login_screen.dart';
 import 'package:gallery/features/gallery/data/mock_photo_repository.dart';
 import 'package:gallery/features/gallery/presentation/screens/gallery_screen.dart';
+import 'package:gallery/features/gallery/presentation/screens/photo_viewer_screen.dart';
 import 'package:gallery/features/gallery/presentation/widgets/photo_thumbnail_tile.dart';
 
 void main() {
@@ -44,6 +45,20 @@ void main() {
       // Allow thumbnails to load
       await tester.pump();
       expect(find.byType(PhotoThumbnailTile), findsWidgets);
+
+      // Tap first thumbnail to open PhotoViewerScreen
+      await tester.tap(find.byType(PhotoThumbnailTile).first);
+      await tester.pumpAndSettle();
+
+      expect(find.byType(PhotoViewerScreen), findsOneWidget);
+      expect(find.text('1 of 40'), findsOneWidget);
+
+      // Tap back in PhotoViewerScreen
+      await tester.tap(find.byTooltip('Back'));
+      await tester.pumpAndSettle();
+
+      // Returned to GalleryScreen
+      expect(find.byType(GalleryScreen), findsOneWidget);
 
       // Tap Settings button in header to visit AppShell
       await tester.tap(find.byIcon(Icons.settings_outlined));

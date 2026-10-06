@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../features/auth/presentation/cubit/auth_cubit.dart';
@@ -9,7 +10,9 @@ import '../../features/auth/presentation/screens/forgot_password_screen.dart';
 import '../../features/auth/presentation/screens/login_screen.dart';
 import '../../features/auth/presentation/screens/register_screen.dart';
 import '../../features/auth/presentation/screens/splash_screen.dart';
+import '../../features/gallery/presentation/cubit/gallery_cubit.dart';
 import '../../features/gallery/presentation/screens/gallery_screen.dart';
+import '../../features/gallery/presentation/screens/photo_viewer_screen.dart';
 import '../app_shell.dart';
 
 /// Helper to convert a Stream into a Listenable for GoRouter refresh.
@@ -37,6 +40,7 @@ class AppRouter {
   static const String registerPath = '/register';
   static const String forgotPasswordPath = '/forgot-password';
   static const String homePath = '/home';
+  static const String photoViewerPath = '/photo-viewer';
   static const String settingsPath = '/settings';
 
   static GoRouter createRouter(AuthCubit authCubit) {
@@ -97,6 +101,14 @@ class AppRouter {
         GoRoute(
           path: homePath,
           builder: (context, state) => const GalleryScreen(),
+        ),
+        GoRoute(
+          path: photoViewerPath,
+          builder: (context, state) {
+            final args = state.extra as PhotoViewerArgs;
+            final photoRepo = context.read<GalleryCubit>().photoRepository;
+            return PhotoViewerScreen(args: args, photoRepository: photoRepo);
+          },
         ),
         GoRoute(
           path: settingsPath,

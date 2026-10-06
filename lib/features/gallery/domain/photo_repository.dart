@@ -27,4 +27,18 @@ abstract class PhotoRepository {
 
   /// Navigates the user directly to system application settings.
   Future<void> openAppSettings();
+
+  /// Retrieves a high-resolution preview byte buffer for full-screen inspection.
+  /// Bounded to a maximum dimension to safeguard memory.
+  Future<Uint8List?> getFullPhoto(
+    String photoId, {
+    int maxWidth = 2048,
+    int maxHeight = 2048,
+  });
+
+  /// Toggles favorite status on a photo asset.
+  Future<bool> toggleFavorite(PhotoModel photo);
+
+  /// Deletes a photo asset from the repository.
+  Future<bool> deletePhoto(PhotoModel photo);
 }

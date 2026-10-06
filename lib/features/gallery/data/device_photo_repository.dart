@@ -72,6 +72,48 @@ class DevicePhotoRepository implements PhotoRepository {
     await PhotoManager.openSetting();
   }
 
+  @override
+  Future<Uint8List?> getFullPhoto(
+    String photoId, {
+    int maxWidth = 2048,
+    int maxHeight = 2048,
+  }) async {
+    final asset = await AssetEntity.fromId(photoId);
+    if (asset == null) return null;
+
+    return asset.thumbnailDataWithSize(
+      ThumbnailSize(maxWidth, maxHeight),
+      quality: 95,
+    );
+  }
+
+  @override
+  Future<bool> toggleFavorite(PhotoModel photo) async {
+    final asset = await AssetEntity.fromId(photo.id);
+    if (asset == null) return false;
+    try {
+      await PhotoManager.editor.darwin.favoriteAsset(
+        entity: asset,
+        favorite: !photo.isFavorite,
+      );
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  @override
+  Future<bool> deletePhoto(PhotoModel photo) async {
+    final asset = await AssetEntity.fromId(photo.id);
+    if (asset == null) return false;
+    try {
+      final result = await PhotoManager.editor.deleteWithIds([photo.id]);
+      return result.isNotEmpty;
+    } catch (_) {
+      return false;
+    }
+  }
+
   PhotoModel _mapAssetToPhotoModel(AssetEntity entity) {
     return PhotoModel(
       id: entity.id,

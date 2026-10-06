@@ -140,5 +140,44 @@ void main() {
       await galleryCubit.openAppSettings();
       expect(mockRepo.appSettingsOpened, isTrue);
     });
+
+    test(
+      'toggleFavorite updates photo favorite flag in loaded state',
+      () async {
+        await galleryCubit.loadInitialPhotos();
+        final initialState = galleryCubit.state as GalleryLoaded;
+        final targetPhoto = initialState.photos.first;
+        final initialFav = targetPhoto.isFavorite;
+
+        await galleryCubit.toggleFavorite(targetPhoto);
+
+        final updatedState = galleryCubit.state as GalleryLoaded;
+        final updatedPhoto = updatedState.photos.firstWhere(
+          (p) => p.id == targetPhoto.id,
+        );
+        expect(updatedPhoto.isFavorite, equals(!initialFav));
+      },
+    );
+
+    test('removePhoto removes photo from loaded state and emits GalleryEmpty when empty', () async {
+      final singlePhotoRepo = MockPhotoRepository(
+        photos: [
+          PhotoModel(
+            id: 'only_photo',
+            width: 100,
+            height: 100,
+            createDateTime: DateTime.now(),
+          ),
+        ],
+      );
+      final singleCubit = GalleryCubit(photoRepository: singlePhotoRepo);
+      await singleCubit.loadInitialPhotos();
+      expect(singleCubit.state, isA<GalleryLoaded>());
+
+      await singleCubit.removePhoto('only_photo');
+      expect(singleCubit.state, isA<GalleryEmpty>());
+
+      await singleCubit.close();
+    });
   });
 }
