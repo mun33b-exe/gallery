@@ -8,8 +8,10 @@ import '../../../../app/theme/app_theme.dart';
 import '../../../../core/responsive/responsive.dart';
 import '../../../../core/widgets/adaptive/adaptive_button.dart';
 import '../../../../core/widgets/adaptive/adaptive_progress_indicator.dart';
+import '../../domain/category_model.dart';
 import '../cubit/gallery_cubit.dart';
 import '../cubit/gallery_state.dart';
+import '../widgets/category_filter_bar.dart';
 import '../widgets/photo_thumbnail_tile.dart';
 import 'photo_viewer_screen.dart';
 
@@ -78,10 +80,7 @@ class _GalleryScreenState extends State<GalleryScreen> {
             }
 
             if (state is GalleryEmpty) {
-              return _buildEmptyView(
-                context,
-                isLimited: state.isLimitedPermission,
-              );
+              return _buildEmptyView(context, state);
             }
 
             if (state is GalleryError) {
@@ -242,55 +241,113 @@ class _GalleryScreenState extends State<GalleryScreen> {
     );
   }
 
-  Widget _buildEmptyView(BuildContext context, {required bool isLimited}) {
+  Widget _buildEmptyView(BuildContext context, GalleryEmpty state) {
     final colors = context.colors;
     final textTheme = Theme.of(context).textTheme;
+    final category = state.selectedCategory;
+    final isFavorites = category?.type == CategoryType.favorites;
+    final isScreenshots = category?.type == CategoryType.screenshots;
 
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.xl),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.photo_library_outlined,
-              size: AppSpacing.xxxl * 1.5,
-              color: colors.textMuted,
+    IconData icon;
+    String title;
+    String subtitle;
+
+    if (state.isLimitedPermission) {
+      icon = Icons.photo_library_outlined;
+      title = 'No Photos Selected';
+      subtitle = 'You granted limited photo access, but have not selected any photos yet.';
+    } else if (isFavorites) {
+      icon = Icons.favorite_border;
+      title = 'No Favorites Yet';
+      subtitle = 'Tap the heart icon on any photo in the viewer to add it to your favorites.';
+    } else if (isScreenshots) {
+      icon = Icons.screenshot_outlined;
+      title = 'No Screenshots Found';
+      subtitle = 'No screenshots were found on your device.';
+    } else {
+      icon = Icons.photo_library_outlined;
+      title = 'No Photos Found';
+      subtitle = category != null
+          ? 'No photos found in ${category.title}.'
+          : 'Your device photo library does not contain any photos.';
+    }
+
+    return Column(
+      children: [
+        if (state.categories.isNotEmpty && category != null)
+          Padding(
+            padding: const EdgeInsets.only(top: AppSpacing.xs),
+            child: CategoryFilterBar(
+              categories: state.categories,
+              selectedCategory: category,
+              onCategorySelected: (cat) =>
+                  context.read<GalleryCubit>().selectCategory(cat),
             ),
-            const SizedBox(height: AppSpacing.lg),
-            Text(
-              isLimited ? 'No Photos Selected' : 'No Photos Found',
-              style: textTheme.headlineMedium?.copyWith(
-                color: colors.textPrimary,
-                fontWeight: FontWeight.bold,
+          ),
+        Expanded(
+          child: Center(
+            child: Padding(
+              padding: const EdgeInsets.all(AppSpacing.xl),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    icon,
+                    size: AppSpacing.xxxl * 1.5,
+                    color: colors.textMuted,
+                  ),
+                  const SizedBox(height: AppSpacing.lg),
+                  Text(
+                    title,
+                    style: textTheme.headlineMedium?.copyWith(
+                      color: colors.textPrimary,
+                      fontWeight: FontWeight.bold,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: AppSpacing.sm),
+                  Text(
+                    subtitle,
+                    style: textTheme.bodyMedium?.copyWith(
+                      color: colors.textSecondary,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: AppSpacing.xl),
+                  if (category != null && category.type != CategoryType.all)
+                    AdaptiveButton(
+                      text: 'View All Photos',
+                      type: AdaptiveButtonType.primary,
+                      onPressed: () {
+                        final allCategory = state.categories.firstWhere(
+                          (c) => c.type == CategoryType.all,
+                          orElse: () => category,
+                        );
+                        context.read<GalleryCubit>().selectCategory(
+                          allCategory,
+                        );
+                      },
+                    )
+                  else
+                    AdaptiveButton(
+                      text: state.isLimitedPermission
+                          ? 'Manage Selection'
+                          : 'Refresh Library',
+                      type: AdaptiveButtonType.secondary,
+                      onPressed: () {
+                        if (state.isLimitedPermission) {
+                          context.read<GalleryCubit>().openAppSettings();
+                        } else {
+                          context.read<GalleryCubit>().refreshPhotos();
+                        }
+                      },
+                    ),
+                ],
               ),
-              textAlign: TextAlign.center,
             ),
-            const SizedBox(height: AppSpacing.sm),
-            Text(
-              isLimited
-                  ? 'You granted limited photo access, but have not selected any photos yet.'
-                  : 'Your device photo library does not contain any photos.',
-              style: textTheme.bodyMedium?.copyWith(
-                color: colors.textSecondary,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: AppSpacing.xl),
-            AdaptiveButton(
-              text: isLimited ? 'Manage Selection' : 'Refresh Library',
-              type: AdaptiveButtonType.secondary,
-              onPressed: () {
-                if (isLimited) {
-                  context.read<GalleryCubit>().openAppSettings();
-                } else {
-                  context.read<GalleryCubit>().refreshPhotos();
-                }
-              },
-            ),
-          ],
+          ),
         ),
-      ),
+      ],
     );
   }
 
@@ -344,94 +401,110 @@ class _GalleryScreenState extends State<GalleryScreen> {
     final gutter = Responsive.horizontalGutter(context);
     final photoRepo = context.read<GalleryCubit>().photoRepository;
 
-    return CustomScrollView(
-      controller: _scrollController,
-      slivers: [
-        // Limited permission notice banner if applicable
-        if (state.isLimitedPermission)
-          SliverToBoxAdapter(
-            child: Container(
-              margin: EdgeInsets.fromLTRB(
-                gutter,
-                AppSpacing.sm,
-                gutter,
-                AppSpacing.sm,
-              ),
-              padding: const EdgeInsets.all(AppSpacing.md),
-              decoration: BoxDecoration(
-                color: colors.surfaceElevated,
-                borderRadius: AppSpacing.borderRadiusMd,
-                border: Border.all(color: colors.border),
-              ),
-              child: Row(
-                children: [
-                  Icon(
-                    Icons.info_outline,
-                    color: colors.accent,
-                    size: AppSpacing.xl,
-                  ),
-                  const SizedBox(width: AppSpacing.sm),
-                  Expanded(
-                    child: Text(
-                      'Limited photo library access active.',
-                      style: textTheme.bodyMedium?.copyWith(
-                        color: colors.textSecondary,
-                      ),
-                    ),
-                  ),
-                  AdaptiveButton(
-                    text: 'Manage',
-                    type: AdaptiveButtonType.text,
-                    onPressed: () =>
-                        context.read<GalleryCubit>().openAppSettings(),
-                  ),
-                ],
-              ),
+    return Column(
+      children: [
+        if (state.categories.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.only(top: AppSpacing.xs),
+            child: CategoryFilterBar(
+              categories: state.categories,
+              selectedCategory: state.selectedCategory,
+              onCategorySelected: (cat) =>
+                  context.read<GalleryCubit>().selectCategory(cat),
             ),
           ),
+        Expanded(
+          child: CustomScrollView(
+            controller: _scrollController,
+            slivers: [
+              // Limited permission notice banner if applicable
+              if (state.isLimitedPermission)
+                SliverToBoxAdapter(
+                  child: Container(
+                    margin: EdgeInsets.fromLTRB(
+                      gutter,
+                      AppSpacing.sm,
+                      gutter,
+                      AppSpacing.sm,
+                    ),
+                    padding: const EdgeInsets.all(AppSpacing.md),
+                    decoration: BoxDecoration(
+                      color: colors.surfaceElevated,
+                      borderRadius: AppSpacing.borderRadiusMd,
+                      border: Border.all(color: colors.border),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.info_outline,
+                          color: colors.accent,
+                          size: AppSpacing.xl,
+                        ),
+                        const SizedBox(width: AppSpacing.sm),
+                        Expanded(
+                          child: Text(
+                            'Limited photo library access active.',
+                            style: textTheme.bodyMedium?.copyWith(
+                              color: colors.textSecondary,
+                            ),
+                          ),
+                        ),
+                        AdaptiveButton(
+                          text: 'Manage',
+                          type: AdaptiveButtonType.text,
+                          onPressed: () =>
+                              context.read<GalleryCubit>().openAppSettings(),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
 
-        // Responsive grid of thumbnails
-        SliverPadding(
-          padding: EdgeInsets.symmetric(
-            horizontal: gutter,
-            vertical: AppSpacing.md,
-          ),
-          sliver: SliverGrid(
-            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: columns,
-              mainAxisSpacing: AppSpacing.xs,
-              crossAxisSpacing: AppSpacing.xs,
-              childAspectRatio: 1.0,
-            ),
-            delegate: SliverChildBuilderDelegate((context, index) {
-              final photo = state.photos[index];
-              return PhotoThumbnailTile(
-                photo: photo,
-                photoRepository: photoRepo,
-                onTap: () {
-                  context.push(
-                    '/photo-viewer',
-                    extra: PhotoViewerArgs(
-                      photos: state.photos,
-                      initialIndex: index,
+              // Responsive grid of thumbnails
+              SliverPadding(
+                padding: EdgeInsets.symmetric(
+                  horizontal: gutter,
+                  vertical: AppSpacing.md,
+                ),
+                sliver: SliverGrid(
+                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: columns,
+                    mainAxisSpacing: AppSpacing.xs,
+                    crossAxisSpacing: AppSpacing.xs,
+                    childAspectRatio: 1.0,
+                  ),
+                  delegate: SliverChildBuilderDelegate((context, index) {
+                    final photo = state.photos[index];
+                    return PhotoThumbnailTile(
+                      photo: photo,
+                      photoRepository: photoRepo,
+                      onTap: () {
+                        context.push(
+                          '/photo-viewer',
+                          extra: PhotoViewerArgs(
+                            photos: state.photos,
+                            initialIndex: index,
+                          ),
+                        );
+                      },
+                    );
+                  }, childCount: state.photos.length),
+                ),
+              ),
+
+              // Lazy pagination spinner
+              if (state.isLoadingMore)
+                const SliverToBoxAdapter(
+                  child: Padding(
+                    padding: EdgeInsets.symmetric(vertical: AppSpacing.xl),
+                    child: Center(
+                      child: AdaptiveProgressIndicator(size: AppSpacing.xl),
                     ),
-                  );
-                },
-              );
-            }, childCount: state.photos.length),
+                  ),
+                ),
+            ],
           ),
         ),
-
-        // Lazy pagination spinner
-        if (state.isLoadingMore)
-          const SliverToBoxAdapter(
-            child: Padding(
-              padding: EdgeInsets.symmetric(vertical: AppSpacing.xl),
-              child: Center(
-                child: AdaptiveProgressIndicator(size: AppSpacing.xl),
-              ),
-            ),
-          ),
       ],
     );
   }

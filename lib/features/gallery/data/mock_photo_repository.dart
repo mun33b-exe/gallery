@@ -1,5 +1,6 @@
 import 'dart:typed_data';
 
+import '../domain/category_model.dart';
 import '../domain/photo_model.dart';
 import '../domain/photo_repository.dart';
 
@@ -119,7 +120,82 @@ class MockPhotoRepository implements PhotoRepository {
   }
 
   @override
-  Future<List<PhotoModel>> getPhotos({int page = 0, int pageSize = 40}) async {
+  Future<List<CategoryModel>> getCategories() async {
+    if (simulatedDelay > Duration.zero) {
+      await Future<void>.delayed(simulatedDelay);
+    }
+
+    final favCount = _photos.where((p) => p.isFavorite).length;
+    final screenshotCount = _photos
+        .where((p) => (p.title ?? '').toLowerCase().contains('screenshot'))
+        .length;
+    final cameraCount = _photos
+        .where((p) => (p.title ?? '').toLowerCase().contains('img'))
+        .length;
+
+    return [
+      CategoryModel(
+        id: 'all',
+        title: 'All Photos',
+        type: CategoryType.all,
+        photoCount: _photos.length,
+        coverPhotoId: _photos.isNotEmpty ? _photos.first.id : null,
+      ),
+      CategoryModel(
+        id: 'favorites',
+        title: 'Favorites',
+        type: CategoryType.favorites,
+        photoCount: favCount,
+        coverPhotoId: _photos.any((p) => p.isFavorite)
+            ? _photos.firstWhere((p) => p.isFavorite).id
+            : null,
+      ),
+      CategoryModel(
+        id: 'recent',
+        title: 'Recent',
+        type: CategoryType.recent,
+        photoCount: _photos.length,
+        coverPhotoId: _photos.isNotEmpty ? _photos.first.id : null,
+      ),
+      CategoryModel(
+        id: 'screenshots',
+        title: 'Screenshots',
+        type: CategoryType.screenshots,
+        photoCount: screenshotCount,
+        coverPhotoId:
+            _photos.any(
+              (p) => (p.title ?? '').toLowerCase().contains('screenshot'),
+            )
+            ? _photos
+                  .firstWhere(
+                    (p) => (p.title ?? '').toLowerCase().contains('screenshot'),
+                  )
+                  .id
+            : null,
+      ),
+      CategoryModel(
+        id: 'camera',
+        title: 'Camera',
+        type: CategoryType.camera,
+        photoCount: cameraCount,
+        coverPhotoId:
+            _photos.any((p) => (p.title ?? '').toLowerCase().contains('img'))
+            ? _photos
+                  .firstWhere(
+                    (p) => (p.title ?? '').toLowerCase().contains('img'),
+                  )
+                  .id
+            : null,
+      ),
+    ];
+  }
+
+  @override
+  Future<List<PhotoModel>> getPhotos({
+    String? categoryId,
+    int page = 0,
+    int pageSize = 40,
+  }) async {
     if (simulatedDelay > Duration.zero) {
       await Future<void>.delayed(simulatedDelay);
     }
@@ -129,13 +205,31 @@ class MockPhotoRepository implements PhotoRepository {
       return [];
     }
 
+    List<PhotoModel> targetList;
+    if (categoryId == 'favorites') {
+      targetList = _photos.where((p) => p.isFavorite).toList();
+    } else if (categoryId == 'screenshots') {
+      targetList = _photos
+          .where((p) => (p.title ?? '').toLowerCase().contains('screenshot'))
+          .toList();
+    } else if (categoryId == 'camera') {
+      targetList = _photos
+          .where((p) => (p.title ?? '').toLowerCase().contains('img'))
+          .toList();
+    } else if (categoryId == 'recent') {
+      targetList = List.of(_photos)
+        ..sort((a, b) => b.createDateTime.compareTo(a.createDateTime));
+    } else {
+      targetList = _photos;
+    }
+
     final startIndex = page * pageSize;
-    if (startIndex >= _photos.length) {
+    if (startIndex >= targetList.length) {
       return [];
     }
 
-    final endIndex = (startIndex + pageSize).clamp(0, _photos.length);
-    return _photos.sublist(startIndex, endIndex);
+    final endIndex = (startIndex + pageSize).clamp(0, targetList.length);
+    return targetList.sublist(startIndex, endIndex);
   }
 
   @override

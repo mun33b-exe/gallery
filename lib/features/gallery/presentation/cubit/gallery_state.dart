@@ -1,5 +1,6 @@
 import 'package:equatable/equatable.dart';
 
+import '../../domain/category_model.dart';
 import '../../domain/photo_model.dart';
 
 /// Base state for Gallery.
@@ -30,13 +31,15 @@ class GalleryLoading extends GalleryState {
   const GalleryLoading();
 }
 
-/// Gallery loaded with photos and pagination metadata.
+/// Gallery loaded with photos, categories, and pagination metadata.
 class GalleryLoaded extends GalleryState {
   final List<PhotoModel> photos;
   final bool hasMore;
   final int currentPage;
   final bool isLoadingMore;
   final bool isLimitedPermission;
+  final List<CategoryModel> categories;
+  final CategoryModel selectedCategory;
 
   const GalleryLoaded({
     required this.photos,
@@ -44,6 +47,8 @@ class GalleryLoaded extends GalleryState {
     this.currentPage = 0,
     this.isLoadingMore = false,
     this.isLimitedPermission = false,
+    this.categories = const [],
+    required this.selectedCategory,
   });
 
   GalleryLoaded copyWith({
@@ -52,6 +57,8 @@ class GalleryLoaded extends GalleryState {
     int? currentPage,
     bool? isLoadingMore,
     bool? isLimitedPermission,
+    List<CategoryModel>? categories,
+    CategoryModel? selectedCategory,
   }) {
     return GalleryLoaded(
       photos: photos ?? this.photos,
@@ -59,6 +66,8 @@ class GalleryLoaded extends GalleryState {
       currentPage: currentPage ?? this.currentPage,
       isLoadingMore: isLoadingMore ?? this.isLoadingMore,
       isLimitedPermission: isLimitedPermission ?? this.isLimitedPermission,
+      categories: categories ?? this.categories,
+      selectedCategory: selectedCategory ?? this.selectedCategory,
     );
   }
 
@@ -69,17 +78,29 @@ class GalleryLoaded extends GalleryState {
     currentPage,
     isLoadingMore,
     isLimitedPermission,
+    categories,
+    selectedCategory,
   ];
 }
 
-/// Permission was granted, but no photos were found in the library.
+/// Permission was granted, but no photos were found in the library or active category.
 class GalleryEmpty extends GalleryState {
   final bool isLimitedPermission;
+  final List<CategoryModel> categories;
+  final CategoryModel? selectedCategory;
 
-  const GalleryEmpty({this.isLimitedPermission = false});
+  const GalleryEmpty({
+    this.isLimitedPermission = false,
+    this.categories = const [],
+    this.selectedCategory,
+  });
 
   @override
-  List<Object?> get props => [isLimitedPermission];
+  List<Object?> get props => [
+    isLimitedPermission,
+    categories,
+    selectedCategory,
+  ];
 }
 
 /// An error occurred while accessing the photo library.

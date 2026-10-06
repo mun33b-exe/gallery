@@ -1,5 +1,6 @@
 import 'dart:typed_data';
 
+import 'category_model.dart';
 import 'photo_model.dart';
 
 /// Device photo permission statuses.
@@ -14,8 +15,15 @@ abstract class PhotoRepository {
   /// Prompts user for photo library permissions if not already granted.
   Future<DevicePermissionStatus> requestPermission();
 
-  /// Retrieves a paginated list of local device photos.
-  Future<List<PhotoModel>> getPhotos({int page = 0, int pageSize = 40});
+  /// Retrieves available gallery categories and albums derived from local device metadata.
+  Future<List<CategoryModel>> getCategories();
+
+  /// Retrieves a paginated list of local device photos optionally filtered by category.
+  Future<List<PhotoModel>> getPhotos({
+    String? categoryId,
+    int page = 0,
+    int pageSize = 40,
+  });
 
   /// Retrieves a memory-efficient thumbnail byte buffer for a photo.
   /// Enforces low-resolution retrieval to prevent OOM conditions in grids.

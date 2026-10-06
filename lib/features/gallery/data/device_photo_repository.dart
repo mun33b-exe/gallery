@@ -2,14 +2,13 @@ import 'dart:typed_data';
 
 import 'package:photo_manager/photo_manager.dart';
 
+import '../domain/category_model.dart';
 import '../domain/photo_model.dart';
 import '../domain/photo_repository.dart';
 
 /// Real device implementation of [PhotoRepository] using `photo_manager`.
 /// Guarantees that only low-resolution thumbnails are loaded in grid previews.
 class DevicePhotoRepository implements PhotoRepository {
-  List<AssetPathEntity>? _cachedPaths;
-
   @override
   Future<DevicePermissionStatus> checkPermission() async {
     final ps = await PhotoManager.getPermissionState(
@@ -27,29 +26,113 @@ class DevicePhotoRepository implements PhotoRepository {
   }
 
   @override
-  Future<List<PhotoModel>> getPhotos({int page = 0, int pageSize = 40}) async {
+  Future<List<CategoryModel>> getCategories() async {
     final permission = await checkPermission();
     if (permission != DevicePermissionStatus.granted &&
         permission != DevicePermissionStatus.limited) {
       return [];
     }
 
-    _cachedPaths ??= await PhotoManager.getAssetPathList(
-      type: RequestType.image,
-      onlyAll: true,
-    );
+    try {
+      final paths = await PhotoManager.getAssetPathList(
+        type: RequestType.image,
+        onlyAll: false,
+      );
 
-    if (_cachedPaths!.isEmpty) {
+      final categories = <CategoryModel>[];
+      for (final path in paths) {
+        final count = await path.assetCountAsync;
+        final name = path.name.toLowerCase();
+        CategoryType type;
+        if (path.isAll || name == 'recent' || name == 'recents') {
+          type = CategoryType.all;
+        } else if (name.contains('favorite')) {
+          type = CategoryType.favorites;
+        } else if (name.contains('screenshot')) {
+          type = CategoryType.screenshots;
+        } else if (name.contains('camera') || name.contains('dcim')) {
+          type = CategoryType.camera;
+        } else {
+          type = CategoryType.recent;
+        }
+
+        if (count > 0 ||
+            type == CategoryType.all ||
+            type == CategoryType.favorites) {
+          categories.add(
+            CategoryModel(
+              id: path.id,
+              title: path.isAll ? 'All Photos' : path.name,
+              type: type,
+              photoCount: count,
+            ),
+          );
+        }
+      }
+
+      if (categories.isEmpty) {
+        categories.add(
+          const CategoryModel(
+            id: 'all',
+            title: 'All Photos',
+            type: CategoryType.all,
+            photoCount: 0,
+          ),
+        );
+      }
+
+      return categories;
+    } catch (_) {
+      return const [
+        CategoryModel(
+          id: 'all',
+          title: 'All Photos',
+          type: CategoryType.all,
+          photoCount: 0,
+        ),
+      ];
+    }
+  }
+
+  @override
+  Future<List<PhotoModel>> getPhotos({
+    String? categoryId,
+    int page = 0,
+    int pageSize = 40,
+  }) async {
+    final permission = await checkPermission();
+    if (permission != DevicePermissionStatus.granted &&
+        permission != DevicePermissionStatus.limited) {
       return [];
     }
 
-    final recentAlbum = _cachedPaths!.first;
-    final assets = await recentAlbum.getAssetListPaged(
-      page: page,
-      size: pageSize,
-    );
+    try {
+      final paths = await PhotoManager.getAssetPathList(
+        type: RequestType.image,
+        onlyAll: categoryId == null || categoryId == 'all',
+      );
 
-    return assets.map(_mapAssetToPhotoModel).toList();
+      if (paths.isEmpty) {
+        return [];
+      }
+
+      AssetPathEntity targetAlbum = paths.first;
+      if (categoryId != null && categoryId != 'all') {
+        targetAlbum = paths.firstWhere(
+          (p) => p.id == categoryId,
+          orElse: () => paths.first,
+        );
+      }
+
+      final assets = await targetAlbum.getAssetListPaged(
+        page: page,
+        size: pageSize,
+      );
+
+      return assets.map(_mapAssetToPhotoModel).toList();
+    } catch (_) {
+      return [];
+    }
   }
 
   @override
