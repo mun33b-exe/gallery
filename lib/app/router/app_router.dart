@@ -13,6 +13,7 @@ import '../../features/auth/presentation/screens/splash_screen.dart';
 import '../../features/gallery/presentation/cubit/gallery_cubit.dart';
 import '../../features/gallery/presentation/screens/gallery_screen.dart';
 import '../../features/gallery/presentation/screens/photo_viewer_screen.dart';
+import '../../features/search/presentation/screens/search_screen.dart';
 import '../app_shell.dart';
 
 /// Helper to convert a Stream into a Listenable for GoRouter refresh.
@@ -41,6 +42,7 @@ class AppRouter {
   static const String forgotPasswordPath = '/forgot-password';
   static const String homePath = '/home';
   static const String photoViewerPath = '/photo-viewer';
+  static const String searchPath = '/search';
   static const String settingsPath = '/settings';
 
   static GoRouter createRouter(AuthCubit authCubit) {
@@ -109,6 +111,10 @@ class AppRouter {
             final photoRepo = context.read<GalleryCubit>().photoRepository;
             return PhotoViewerScreen(args: args, photoRepository: photoRepo);
           },
+        ),
+        GoRoute(
+          path: searchPath,
+          builder: (context, state) => const SearchScreen(),
         ),
         GoRoute(
           path: settingsPath,

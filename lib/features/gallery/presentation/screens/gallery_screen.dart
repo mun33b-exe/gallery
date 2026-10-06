@@ -114,6 +114,11 @@ class _GalleryScreenState extends State<GalleryScreen> {
       ),
       actions: [
         IconButton(
+          icon: Icon(Icons.search, color: colors.textPrimary),
+          tooltip: 'Search',
+          onPressed: () => context.push('/search'),
+        ),
+        IconButton(
           icon: Icon(Icons.settings_outlined, color: colors.textSecondary),
           tooltip: 'Settings',
           onPressed: () => context.push('/settings'),
@@ -179,6 +184,15 @@ class _GalleryScreenState extends State<GalleryScreen> {
                 color: colors.accent,
                 fontWeight: FontWeight.bold,
               ),
+            ),
+          ),
+          CupertinoButton(
+            padding: const EdgeInsets.only(left: AppSpacing.sm),
+            onPressed: () => context.push('/search'),
+            child: Icon(
+              CupertinoIcons.search,
+              color: colors.textPrimary,
+              size: AppSpacing.xl,
             ),
           ),
           CupertinoButton(
