@@ -1,15 +1,25 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:gallery/app/app.dart';
 import 'package:gallery/features/auth/data/mock_auth_repository.dart';
 import 'package:gallery/features/auth/presentation/screens/login_screen.dart';
+import 'package:gallery/features/gallery/data/mock_photo_repository.dart';
+import 'package:gallery/features/gallery/presentation/screens/gallery_screen.dart';
+import 'package:gallery/features/gallery/presentation/widgets/photo_thumbnail_tile.dart';
 
 void main() {
   testWidgets(
-    'GalleryApp end-to-end auth flow: splash -> login -> demo sign-in -> home -> logout',
+    'GalleryApp end-to-end flow: splash -> login -> demo sign-in -> gallery -> settings -> logout',
     (tester) async {
-      final mockRepo = MockAuthRepository(simulatedDelay: Duration.zero);
+      final mockAuthRepo = MockAuthRepository(simulatedDelay: Duration.zero);
+      final mockPhotoRepo = MockPhotoRepository(simulatedDelay: Duration.zero);
 
-      await tester.pumpWidget(GalleryApp(authRepository: mockRepo));
+      await tester.pumpWidget(
+        GalleryApp(
+          authRepository: mockAuthRepo,
+          photoRepository: mockPhotoRepo,
+        ),
+      );
       await tester.pump();
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 400));
@@ -27,7 +37,19 @@ void main() {
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 400));
 
-      // User is now authenticated and GoRouter redirects to /home (AppShell)
+      // User is authenticated and GoRouter redirects to /home (GalleryScreen)
+      expect(find.byType(GalleryScreen), findsOneWidget);
+      expect(find.text('Photos'), findsOneWidget);
+
+      // Allow thumbnails to load
+      await tester.pump();
+      expect(find.byType(PhotoThumbnailTile), findsWidgets);
+
+      // Tap Settings button in header to visit AppShell
+      await tester.tap(find.byIcon(Icons.settings_outlined));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 400));
+
       expect(find.text('AI Gallery Foundation'), findsOneWidget);
       expect(find.text('Demo Creator'), findsOneWidget);
 
@@ -40,7 +62,7 @@ void main() {
       expect(find.byType(LoginScreen), findsOneWidget);
       expect(find.text('Welcome Back'), findsOneWidget);
 
-      mockRepo.dispose();
+      mockAuthRepo.dispose();
     },
   );
 }

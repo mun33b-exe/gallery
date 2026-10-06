@@ -8,6 +8,8 @@ import 'package:gallery/features/auth/domain/auth_user.dart';
 import 'package:gallery/features/auth/presentation/cubit/auth_cubit.dart';
 import 'package:gallery/features/auth/presentation/screens/login_screen.dart';
 import 'package:gallery/features/auth/presentation/screens/splash_screen.dart';
+import 'package:gallery/features/gallery/data/mock_photo_repository.dart';
+import 'package:gallery/features/gallery/presentation/cubit/gallery_cubit.dart';
 import 'package:go_router/go_router.dart';
 
 void main() {
@@ -15,16 +17,21 @@ void main() {
     late MockAuthRepository mockRepo;
     late AuthCubit authCubit;
     late ThemeCubit themeCubit;
+    late MockPhotoRepository mockPhotoRepo;
+    late GalleryCubit galleryCubit;
 
     setUp(() {
       mockRepo = MockAuthRepository(simulatedDelay: Duration.zero);
       authCubit = AuthCubit(authRepository: mockRepo);
       themeCubit = ThemeCubit();
+      mockPhotoRepo = MockPhotoRepository(photos: const []);
+      galleryCubit = GalleryCubit(photoRepository: mockPhotoRepo);
     });
 
     tearDown(() {
       authCubit.close();
       themeCubit.close();
+      galleryCubit.close();
       mockRepo.dispose();
     });
 
@@ -33,6 +40,7 @@ void main() {
         providers: [
           BlocProvider<AuthCubit>.value(value: authCubit),
           BlocProvider<ThemeCubit>.value(value: themeCubit),
+          BlocProvider<GalleryCubit>.value(value: galleryCubit),
         ],
         child: MaterialApp.router(routerConfig: router),
       );
@@ -90,6 +98,7 @@ void main() {
             providers: [
               BlocProvider<AuthCubit>.value(value: seededCubit),
               BlocProvider<ThemeCubit>.value(value: themeCubit),
+              BlocProvider<GalleryCubit>.value(value: galleryCubit),
             ],
             child: MaterialApp.router(routerConfig: router),
           ),

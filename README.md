@@ -82,8 +82,8 @@ flutter run
 
 - [x] **Phase 0 — Project confirmation and development foundation**
 - [x] **Phase 1 — App shell, design system, responsive system, and themes**
-- [x] **Phase 2 — Navigation and authentication frontend** (Completed, ready for audit)
-- [ ] **Phase 3 — Device photo access and gallery foundation**
+- [x] **Phase 2 — Navigation and authentication frontend**
+- [x] **Phase 3 — Device photo access and gallery foundation** (Completed, ready for audit)
 - [ ] **Phase 4 — Photo viewer and basic photo interactions**
 - [ ] **Phase 5 — Basic categories and filtering**
 - [ ] **Phase 6 — AI-search frontend scaffold**

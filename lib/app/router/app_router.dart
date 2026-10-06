@@ -9,6 +9,7 @@ import '../../features/auth/presentation/screens/forgot_password_screen.dart';
 import '../../features/auth/presentation/screens/login_screen.dart';
 import '../../features/auth/presentation/screens/register_screen.dart';
 import '../../features/auth/presentation/screens/splash_screen.dart';
+import '../../features/gallery/presentation/screens/gallery_screen.dart';
 import '../app_shell.dart';
 
 /// Helper to convert a Stream into a Listenable for GoRouter refresh.
@@ -36,6 +37,7 @@ class AppRouter {
   static const String registerPath = '/register';
   static const String forgotPasswordPath = '/forgot-password';
   static const String homePath = '/home';
+  static const String settingsPath = '/settings';
 
   static GoRouter createRouter(AuthCubit authCubit) {
     return GoRouter(
@@ -92,7 +94,14 @@ class AppRouter {
           path: forgotPasswordPath,
           builder: (context, state) => const ForgotPasswordScreen(),
         ),
-        GoRoute(path: homePath, builder: (context, state) => const AppShell()),
+        GoRoute(
+          path: homePath,
+          builder: (context, state) => const GalleryScreen(),
+        ),
+        GoRoute(
+          path: settingsPath,
+          builder: (context, state) => const AppShell(),
+        ),
       ],
     );
   }
