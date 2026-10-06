@@ -1,30 +1,69 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 
-import 'app_shell.dart';
+import '../features/auth/data/mock_auth_repository.dart';
+import '../features/auth/domain/auth_repository.dart';
+import '../features/auth/presentation/cubit/auth_cubit.dart';
+import 'router/app_router.dart';
 import 'theme/theme_cubit.dart';
 import 'theme/theme_state.dart';
 
 /// Root Application Widget.
-/// Manages global theme state through [ThemeCubit].
-class GalleryApp extends StatelessWidget {
-  const GalleryApp({super.key});
+/// Manages global theme state and authentication state with GoRouter.
+class GalleryApp extends StatefulWidget {
+  final AuthRepository? authRepository;
+
+  const GalleryApp({super.key, this.authRepository});
+
+  @override
+  State<GalleryApp> createState() => _GalleryAppState();
+}
+
+class _GalleryAppState extends State<GalleryApp> {
+  late final AuthRepository _authRepository;
+  late final AuthCubit _authCubit;
+  late final ThemeCubit _themeCubit;
+  late final GoRouter _router;
+
+  @override
+  void initState() {
+    super.initState();
+    _authRepository = widget.authRepository ?? MockAuthRepository();
+    _authCubit = AuthCubit(authRepository: _authRepository);
+    _themeCubit = ThemeCubit();
+    _router = AppRouter.createRouter(_authCubit);
+  }
+
+  @override
+  void dispose() {
+    _authCubit.close();
+    _themeCubit.close();
+    if (widget.authRepository == null &&
+        _authRepository is MockAuthRepository) {
+      _authRepository.dispose();
+    }
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (_) => ThemeCubit(),
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider<ThemeCubit>.value(value: _themeCubit),
+        BlocProvider<AuthCubit>.value(value: _authCubit),
+      ],
       child: BlocBuilder<ThemeCubit, ThemeState>(
-        builder: (context, state) {
-          final themeDef = state.selectedTheme;
-          return MaterialApp(
+        builder: (context, themeState) {
+          final themeDef = themeState.selectedTheme;
+          return MaterialApp.router(
             title: 'AI Gallery',
             debugShowCheckedModeBanner: false,
             theme: themeDef.themeData,
             themeMode: themeDef.brightness == Brightness.dark
                 ? ThemeMode.dark
                 : ThemeMode.light,
-            home: const AppShell(),
+            routerConfig: _router,
           );
         },
       ),

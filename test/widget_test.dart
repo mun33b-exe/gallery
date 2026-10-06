@@ -1,39 +1,46 @@
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:gallery/app/app.dart';
+import 'package:gallery/features/auth/data/mock_auth_repository.dart';
+import 'package:gallery/features/auth/presentation/screens/login_screen.dart';
 
 void main() {
-  testWidgets('GalleryApp boots into AppShell and displays responsive info', (
-    tester,
-  ) async {
-    await tester.pumpWidget(const GalleryApp());
-    await tester.pump();
+  testWidgets(
+    'GalleryApp end-to-end auth flow: splash -> login -> demo sign-in -> home -> logout',
+    (tester) async {
+      final mockRepo = MockAuthRepository(simulatedDelay: Duration.zero);
 
-    // Verify header and foundation labels
-    expect(find.text('AI Gallery Foundation'), findsOneWidget);
-    expect(find.text('Theme Selector'), findsOneWidget);
-    expect(find.text('Responsive Grid System'), findsOneWidget);
+      await tester.pumpWidget(GalleryApp(authRepository: mockRepo));
+      await tester.pump();
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 400));
 
-    // Verify all registered theme names appear
-    expect(find.text('Dark'), findsOneWidget);
-    expect(find.text('Light'), findsOneWidget);
-    expect(find.text('Midnight Blue'), findsOneWidget);
+      // Session check runs and redirects unauthenticated state to LoginScreen
+      expect(find.byType(LoginScreen), findsOneWidget);
+      expect(find.text('Welcome Back'), findsOneWidget);
 
-    // Tap the 'Light' theme button
-    await tester.tap(find.text('Light'));
-    await tester.pump();
+      // Tap demo credentials helper button
+      await tester.tap(find.text('Fill Demo Account (demo@gallery.ai)'));
+      await tester.pump();
 
-    // Verify MaterialApp updated theme brightness without errors
-    final materialApp = tester.widget<MaterialApp>(find.byType(MaterialApp));
-    expect(materialApp.theme?.brightness, equals(Brightness.light));
+      // Tap 'Sign In'
+      await tester.tap(find.text('Sign In'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 400));
 
-    // Tap the 'Midnight Blue' theme button
-    await tester.tap(find.text('Midnight Blue'));
-    await tester.pump();
+      // User is now authenticated and GoRouter redirects to /home (AppShell)
+      expect(find.text('AI Gallery Foundation'), findsOneWidget);
+      expect(find.text('Demo Creator'), findsOneWidget);
 
-    final materialAppUpdated = tester.widget<MaterialApp>(
-      find.byType(MaterialApp),
-    );
-    expect(materialAppUpdated.theme?.brightness, equals(Brightness.dark));
-  });
+      // Tap Sign Out button
+      await tester.tap(find.text('Sign Out'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 400));
+
+      // Redirected back to LoginScreen
+      expect(find.byType(LoginScreen), findsOneWidget);
+      expect(find.text('Welcome Back'), findsOneWidget);
+
+      mockRepo.dispose();
+    },
+  );
 }

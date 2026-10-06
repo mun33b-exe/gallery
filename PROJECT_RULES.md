@@ -168,7 +168,7 @@ Package choices must be documented in the implementation plan and approved when 
 
 ---
 
-## 5. Responsive design standard
+## 5. Responsive and Adaptive Design Standard
 
 ### 5.1 Central responsive utility is mandatory
 
@@ -207,6 +207,13 @@ final columns = Responsive.galleryColumns(context);
 ```
 
 The exact algorithm may evolve, but it must remain centralized and testable.
+
+### 5.3 Platform-Specific Adaptive Design (Material vs. Cupertino)
+
+- The app must deliver an authentic, native user experience tailored to the target platform.
+- **Android**: Must follow Google/Material 3 design principles (e.g., Material buttons, Material navigation shell, Material dialogs/snackbars, and elevation tokens).
+- **iOS**: Must follow Apple/Cupertino design principles (e.g., Cupertino action sheets, iOS-style dialogs, bottom sheets, Cupertino navigation transitions, and Apple-standard iconography where appropriate).
+- Use platform-adaptive abstractions or conditional platform branching (`Theme.of(context).platform` or `defaultTargetPlatform`) to switch presentation styles without duplicating business logic or breaking the BLoC/Repository separation.
 
 ---
 

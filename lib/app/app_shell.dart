@@ -2,14 +2,19 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../core/responsive/responsive.dart';
+import '../../core/widgets/adaptive/adaptive_button.dart';
+import '../../core/widgets/adaptive/adaptive_progress_indicator.dart';
+import '../../features/auth/domain/auth_user.dart';
+import '../../features/auth/presentation/cubit/auth_cubit.dart';
+import '../../features/auth/presentation/cubit/auth_state.dart';
 import 'theme/app_colors.dart';
 import 'theme/app_spacing.dart';
 import 'theme/app_theme.dart';
 import 'theme/theme_cubit.dart';
 
-/// AppShell serves as the foundation preview shell for Phase 1.
+/// AppShell serves as the foundation preview shell for Phase 1 & 2.
 /// Demonstrates responsive layout calculations, dynamic multi-theme switching,
-/// and standardized design tokens (strictly without arbitrary literals).
+/// authenticated user session handling, and standardized design tokens.
 class AppShell extends StatelessWidget {
   const AppShell({super.key});
 
@@ -20,6 +25,8 @@ class AppShell extends StatelessWidget {
     final deviceType = Responsive.deviceType(context);
     final columns = Responsive.galleryColumns(context);
     final screenWidth = Responsive.screenWidth(context);
+    final authState = context.watch<AuthCubit?>()?.state;
+    final user = authState is Authenticated ? authState.user : null;
 
     return Scaffold(
       backgroundColor: colors.surfacePrimary,
@@ -60,6 +67,11 @@ class AppShell extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              if (user != null) ...[
+                _buildUserSessionCard(context, user),
+                const SizedBox(height: AppSpacing.xl),
+              ],
+
               // Theme Switcher Section
               _buildSectionHeader(
                 context,
@@ -246,35 +258,15 @@ class AppShell extends StatelessWidget {
                   spacing: AppSpacing.md,
                   runSpacing: AppSpacing.sm,
                   children: [
-                    ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: colors.accent,
-                        foregroundColor: AppPalette.white,
-                        shape: const RoundedRectangleBorder(
-                          borderRadius: AppSpacing.borderRadiusSm,
-                        ),
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: AppSpacing.lg,
-                          vertical: AppSpacing.md,
-                        ),
-                      ),
+                    AdaptiveButton(
+                      text: 'Primary Action',
+                      type: AdaptiveButtonType.primary,
                       onPressed: () {},
-                      child: const Text('Primary Action'),
                     ),
-                    OutlinedButton(
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: colors.textPrimary,
-                        side: BorderSide(color: colors.border),
-                        shape: const RoundedRectangleBorder(
-                          borderRadius: AppSpacing.borderRadiusSm,
-                        ),
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: AppSpacing.lg,
-                          vertical: AppSpacing.md,
-                        ),
-                      ),
+                    AdaptiveButton(
+                      text: 'Secondary Action',
+                      type: AdaptiveButtonType.secondary,
                       onPressed: () {},
-                      child: const Text('Secondary Action'),
                     ),
                   ],
                 ),
@@ -294,12 +286,7 @@ class AppShell extends StatelessWidget {
                   padding: const EdgeInsets.all(AppSpacing.lg),
                   child: Column(
                     children: [
-                      CircularProgressIndicator(
-                        strokeWidth: AppSpacing.xs,
-                        valueColor: AlwaysStoppedAnimation<Color>(
-                          colors.accent,
-                        ),
-                      ),
+                      const AdaptiveProgressIndicator(size: AppSpacing.xxl),
                       const SizedBox(height: AppSpacing.md),
                       Text(
                         'Loading state',
@@ -378,6 +365,59 @@ class AppShell extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildUserSessionCard(BuildContext context, AuthUser user) {
+    final colors = context.colors;
+    final textTheme = Theme.of(context).textTheme;
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.lg),
+        child: Row(
+          children: [
+            CircleAvatar(
+              backgroundColor: colors.accent,
+              foregroundColor: AppPalette.white,
+              radius: AppSpacing.xl,
+              child: Text(
+                user.displayName.isNotEmpty
+                    ? user.displayName.substring(0, 1).toUpperCase()
+                    : 'U',
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
+            ),
+            const SizedBox(width: AppSpacing.md),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    user.displayName,
+                    style: textTheme.labelLarge?.copyWith(
+                      color: colors.textPrimary,
+                    ),
+                  ),
+                  Text(
+                    user.email,
+                    style: textTheme.bodyMedium?.copyWith(
+                      color: colors.textSecondary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            AdaptiveButton(
+              text: 'Sign Out',
+              type: AdaptiveButtonType.secondary,
+              onPressed: () {
+                context.read<AuthCubit?>()?.logout();
+              },
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

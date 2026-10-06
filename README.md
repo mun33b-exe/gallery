@@ -81,8 +81,8 @@ flutter run
 ## 5. Implementation Roadmap
 
 - [x] **Phase 0 — Project confirmation and development foundation**
-- [x] **Phase 1 — App shell, design system, responsive system, and themes** (Completed, ready for audit)
-- [ ] **Phase 2 — Navigation and authentication frontend**
+- [x] **Phase 1 — App shell, design system, responsive system, and themes**
+- [x] **Phase 2 — Navigation and authentication frontend** (Completed, ready for audit)
 - [ ] **Phase 3 — Device photo access and gallery foundation**
 - [ ] **Phase 4 — Photo viewer and basic photo interactions**
 - [ ] **Phase 5 — Basic categories and filtering**
