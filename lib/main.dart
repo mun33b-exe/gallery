@@ -1,15 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:gallery_ai_engine/gallery_ai_engine.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'app/app.dart';
-import 'core/ai/onnx_model_service.dart';
-import 'core/database/gallery_database_service.dart';
 import 'core/services/preferences_service.dart';
 import 'features/auth/data/supabase_auth_repository.dart';
 import 'features/gallery/data/device_photo_repository.dart';
-import 'features/search/data/on_device_ai_photo_search_repository.dart';
+import 'features/search/data/mock_ai_photo_search_repository.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -25,25 +22,8 @@ void main() async {
   final sharedPrefs = await SharedPreferences.getInstance();
   final preferencesService = PreferencesService(sharedPrefs);
 
-  // Initialize local SQLite database
-  final databaseService = await GalleryDatabaseService.openOnDevice();
-
-  // Initialize on-device ONNX runtime
-  final onnxService = OnnxModelService();
-  await onnxService.initialize();
-
-  final textEngine = TextEngine(
-    runner: (modelName, tokens, shape) =>
-        onnxService.runTextModel(modelName, tokens, shape),
-  );
-
   final photoRepository = DevicePhotoRepository();
-  final searchRepository = OnDeviceAiPhotoSearchRepository(
-    databaseService: databaseService,
-    textEngine: textEngine,
-    preferencesService: preferencesService,
-    photoRepository: photoRepository,
-  );
+  final searchRepository = MockAiPhotoSearchRepository();
 
   runApp(
     GalleryApp(
