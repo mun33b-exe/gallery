@@ -95,6 +95,12 @@ class AuthCubit extends Cubit<AuthState> {
 
   String _cleanErrorMessage(Object error) {
     final raw = error.toString();
+    if (raw.contains('SocketException') ||
+        raw.contains('Failed host lookup') ||
+        raw.contains('AuthRetryableFetchException') ||
+        raw.contains('Network connection unavailable')) {
+      return 'Network connection unavailable. Please check your internet connection.';
+    }
     if (raw.startsWith('Exception: ')) {
       return raw.substring(11);
     }

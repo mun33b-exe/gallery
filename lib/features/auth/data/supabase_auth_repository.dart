@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:supabase_flutter/supabase_flutter.dart' hide AuthUser;
 
 import '../domain/auth_repository.dart';
@@ -26,11 +28,19 @@ class SupabaseAuthRepository implements AuthRepository {
 
   @override
   Future<AuthUser?> checkCurrentSession() async {
-    final session = _client.auth.currentSession;
-    if (session != null) {
-      return _mapUser(session.user);
+    try {
+      final session = _client.auth.currentSession;
+      if (session != null) {
+        return _mapUser(session.user);
+      }
+      return null;
+    } on SocketException {
+      return null;
+    } on AuthRetryableFetchException {
+      return null;
+    } catch (_) {
+      return null;
     }
-    return null;
   }
 
   @override
@@ -38,17 +48,21 @@ class SupabaseAuthRepository implements AuthRepository {
     required String email,
     required String password,
   }) async {
-    final response = await _client.auth.signInWithPassword(
-      email: email.trim(),
-      password: password,
-    );
+    try {
+      final response = await _client.auth.signInWithPassword(
+        email: email.trim(),
+        password: password,
+      );
 
-    final user = response.user;
-    if (user == null) {
-      throw Exception('Authentication failed. Please verify credentials.');
+      final user = response.user;
+      if (user == null) {
+        throw Exception('Authentication failed. Please verify credentials.');
+      }
+
+      return _mapUser(user);
+    } catch (e) {
+      _handleAuthError(e);
     }
-
-    return _mapUser(user);
   }
 
   @override
@@ -57,28 +71,67 @@ class SupabaseAuthRepository implements AuthRepository {
     required String password,
     required String displayName,
   }) async {
-    final response = await _client.auth.signUp(
-      email: email.trim(),
-      password: password,
-      data: {'display_name': displayName.trim()},
-    );
+    try {
+      final response = await _client.auth.signUp(
+        email: email.trim(),
+        password: password,
+        data: {'display_name': displayName.trim()},
+      );
 
-    final user = response.user;
-    if (user == null) {
-      throw Exception('Registration failed. Please try again.');
+      final user = response.user;
+      if (user == null) {
+        throw Exception('Registration failed. Please try again.');
+      }
+
+      return _mapUser(user);
+    } catch (e) {
+      _handleAuthError(e);
     }
-
-    return _mapUser(user);
   }
 
   @override
   Future<void> logout() async {
-    await _client.auth.signOut();
+    try {
+      await _client.auth.signOut();
+    } catch (e) {
+      _handleAuthError(e);
+    }
   }
 
   @override
   Future<void> resetPassword({required String email}) async {
-    await _client.auth.resetPasswordForEmail(email.trim());
+    try {
+      await _client.auth.resetPasswordForEmail(email.trim());
+    } catch (e) {
+      _handleAuthError(e);
+    }
+  }
+
+  Never _handleAuthError(Object error) {
+    if (error is SocketException ||
+        error is AuthRetryableFetchException ||
+        error.toString().contains('SocketException') ||
+        error.toString().contains('Failed host lookup') ||
+        error.toString().contains('Network connection') ||
+        error.toString().contains('ClientException')) {
+      throw Exception(
+        'Network connection unavailable. Please check your internet connection.',
+      );
+    }
+    if (error is AuthException) {
+      if (error.message.toLowerCase().contains('failed host lookup') ||
+          error.message.toLowerCase().contains('socketexception') ||
+          error.message.toLowerCase().contains('network')) {
+        throw Exception(
+          'Network connection unavailable. Please check your internet connection.',
+        );
+      }
+      throw Exception(error.message);
+    }
+    if (error is Exception) {
+      throw error;
+    }
+    throw Exception(error.toString());
   }
 
   AuthUser _mapUser(User user) {

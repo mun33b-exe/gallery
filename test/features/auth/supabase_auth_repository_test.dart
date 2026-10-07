@@ -27,5 +27,34 @@ void main() {
       expect(user.email, equals('jane@example.com'));
       expect(user.userMetadata?['display_name'], equals('Jane Doe'));
     });
+
+    test(
+      'checkCurrentSession returns null when offline without throwing',
+      () async {
+        final repo = SupabaseAuthRepository(
+          supabaseClient: SupabaseClient('http://127.0.0.1:59998', 'anon'),
+        );
+
+        final user = await repo.checkCurrentSession();
+        expect(user, isNull);
+      },
+    );
+
+    test('login catches network error and throws friendly Exception', () async {
+      final repo = SupabaseAuthRepository(
+        supabaseClient: SupabaseClient('http://127.0.0.1:59998', 'anon'),
+      );
+
+      expect(
+        () => repo.login(email: 'test@example.com', password: 'password123'),
+        throwsA(
+          predicate(
+            (e) =>
+                e is Exception &&
+                e.toString().contains('Network connection unavailable'),
+          ),
+        ),
+      );
+    });
   });
 }

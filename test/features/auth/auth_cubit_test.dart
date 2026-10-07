@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:gallery/features/auth/data/mock_auth_repository.dart';
+import 'package:gallery/features/auth/domain/auth_repository.dart';
 import 'package:gallery/features/auth/domain/auth_user.dart';
 import 'package:gallery/features/auth/presentation/cubit/auth_cubit.dart';
 import 'package:gallery/features/auth/presentation/cubit/auth_state.dart';
@@ -160,5 +161,59 @@ void main() {
       authCubit.clearError();
       expect(authCubit.state, equals(const Unauthenticated()));
     });
+
+    test('login with network/socket exception maps to friendly network error message', () async {
+      final failingRepo = _NetworkFailingAuthRepository();
+      final cubit = AuthCubit(authRepository: failingRepo);
+
+      await cubit.login(email: 'test@example.com', password: 'password123');
+
+      expect(cubit.state, isA<AuthError>());
+      final errorState = cubit.state as AuthError;
+      expect(
+        errorState.message,
+        equals(
+          'Network connection unavailable. Please check your internet connection.',
+        ),
+      );
+
+      await cubit.close();
+    });
   });
+}
+
+class _NetworkFailingAuthRepository implements AuthRepository {
+  @override
+  Stream<AuthUser?> get authStateChanges => const Stream.empty();
+
+  @override
+  AuthUser? get currentUser => null;
+
+  @override
+  Future<AuthUser?> checkCurrentSession() async => null;
+
+  @override
+  Future<AuthUser> login({
+    required String email,
+    required String password,
+  }) async {
+    throw Exception(
+      "SocketException: Failed host lookup: 'izjmjwwvcnzurcjfrlfh.supabase.co' (OS Error: No address associated with hostname, errno = 7)",
+    );
+  }
+
+  @override
+  Future<AuthUser> register({
+    required String email,
+    required String password,
+    required String displayName,
+  }) async {
+    throw Exception('SocketException: Failed host lookup');
+  }
+
+  @override
+  Future<void> logout() async {}
+
+  @override
+  Future<void> resetPassword({required String email}) async {}
 }
