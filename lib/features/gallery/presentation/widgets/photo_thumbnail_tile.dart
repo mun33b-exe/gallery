@@ -79,54 +79,67 @@ class _PhotoThumbnailTileState extends State<PhotoThumbnailTile> {
   @override
   Widget build(BuildContext context) {
     final colors = context.colors;
+    final photoLabel =
+        widget.photo.title != null && widget.photo.title!.isNotEmpty
+        ? 'Photo: ${widget.photo.title}'
+        : 'Photo ${widget.photo.id}';
 
-    return ClipRRect(
-      borderRadius: AppSpacing.borderRadiusSm,
-      child: Material(
-        color: colors.surfaceSecondary,
-        child: InkWell(
-          onTap: widget.onTap,
-          child: Stack(
-            fit: StackFit.expand,
-            children: [
-              if (_isLoading)
-                const Center(
-                  child: AdaptiveProgressIndicator(size: AppSpacing.lg),
-                )
-              else if (_hasError || _thumbnailBytes == null)
-                Center(
-                  child: Icon(
-                    Icons.broken_image_outlined,
-                    color: colors.textMuted,
-                    size: AppSpacing.xl,
-                  ),
-                )
-              else
-                Image.memory(
-                  _thumbnailBytes!,
-                  fit: BoxFit.cover,
-                  gaplessPlayback: true,
-                ),
-
-              // Favorite indicator badge
-              if (widget.photo.isFavorite)
-                Positioned(
-                  bottom: AppSpacing.xs,
-                  right: AppSpacing.xs,
-                  child: Container(
-                    padding: const EdgeInsets.all(AppSpacing.xxs),
-                    decoration: BoxDecoration(
-                      color: AppPalette.black.withValues(alpha: 0.55),
-                      shape: BoxShape.circle,
+    return Semantics(
+      button: true,
+      label: '$photoLabel${widget.photo.isFavorite ? ", Favorite" : ""}',
+      child: ClipRRect(
+        borderRadius: AppSpacing.borderRadiusSm,
+        child: Material(
+          color: colors.surfaceSecondary,
+          child: InkWell(
+            onTap: widget.onTap,
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                if (_isLoading)
+                  const Center(
+                    child: AdaptiveProgressIndicator(size: AppSpacing.lg),
+                  )
+                else if (_hasError || _thumbnailBytes == null)
+                  Center(
+                    child: Icon(
+                      Icons.broken_image_outlined,
+                      color: colors.textMuted,
+                      size: AppSpacing.xl,
                     ),
-                    child: const Icon(
-                      Icons.favorite,
-                      color: AppPalette.rose500,
-                      size: AppSpacing.md,
+                  )
+                else
+                  Hero(
+                    tag: 'photo_${widget.photo.id}',
+                    child: Image.memory(
+                      _thumbnailBytes!,
+                      fit: BoxFit.cover,
+                      gaplessPlayback: true,
+                      cacheWidth: 300,
+                      cacheHeight: 300,
                     ),
                   ),
-                ),
-            ],
+
+                // Favorite indicator badge
+                if (widget.photo.isFavorite)
+                  Positioned(
+                    bottom: AppSpacing.xs,
+                    right: AppSpacing.xs,
+                    child: Container(
+                      padding: const EdgeInsets.all(AppSpacing.xxs),
+                      decoration: BoxDecoration(
+                        color: AppPalette.black.withValues(alpha: 0.55),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.favorite,
+                        color: AppPalette.rose500,
+                        size: AppSpacing.md,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
           ),
         ),
       ),

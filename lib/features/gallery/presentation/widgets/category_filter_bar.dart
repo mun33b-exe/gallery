@@ -54,30 +54,37 @@ class CategoryFilterBar extends StatelessWidget {
   ) {
     final colors = context.colors;
 
-    return FilterChip(
+    return Semantics(
+      button: true,
       selected: isSelected,
-      showCheckmark: false,
-      avatar: Icon(
-        _getMaterialIcon(category.type),
-        size: 16,
-        color: isSelected ? colors.surfacePrimary : colors.textSecondary,
-      ),
-      label: Text(
-        '${category.title} (${category.photoCount})',
-        style: TextStyle(
-          fontSize: 13,
-          fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-          color: isSelected ? colors.surfacePrimary : colors.textPrimary,
+      label: '${category.title}, ${category.photoCount} photos',
+      child: FilterChip(
+        selected: isSelected,
+        showCheckmark: false,
+        avatar: Icon(
+          _getMaterialIcon(category.type),
+          size: 16,
+          color: isSelected ? colors.surfacePrimary : colors.textSecondary,
         ),
+        label: Text(
+          '${category.title} (${category.photoCount})',
+          style: TextStyle(
+            fontSize: 13,
+            fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+            color: isSelected ? colors.surfacePrimary : colors.textPrimary,
+          ),
+        ),
+        selectedColor: colors.accent,
+        backgroundColor: colors.surfaceSecondary,
+        side: BorderSide(
+          color: isSelected ? colors.accent : colors.border,
+          width: 1,
+        ),
+        shape: RoundedRectangleBorder(
+          borderRadius: AppSpacing.borderRadiusFull,
+        ),
+        onSelected: (_) => onCategorySelected(category),
       ),
-      selectedColor: colors.accent,
-      backgroundColor: colors.surfaceSecondary,
-      side: BorderSide(
-        color: isSelected ? colors.accent : colors.border,
-        width: 1,
-      ),
-      shape: RoundedRectangleBorder(borderRadius: AppSpacing.borderRadiusFull),
-      onSelected: (_) => onCategorySelected(category),
     );
   }
 
@@ -88,33 +95,38 @@ class CategoryFilterBar extends StatelessWidget {
   ) {
     final colors = context.colors;
 
-    return Center(
-      child: CupertinoButton(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-        minimumSize: Size.zero,
-        borderRadius: AppSpacing.borderRadiusFull,
-        color: isSelected
-            ? colors.accent
-            : colors.surfaceElevated.withValues(alpha: 0.8),
-        onPressed: () => onCategorySelected(category),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              _getCupertinoIcon(category.type),
-              size: 14,
-              color: isSelected ? AppPalette.white : colors.textSecondary,
-            ),
-            const SizedBox(width: AppSpacing.xs),
-            Text(
-              '${category.title} (${category.photoCount})',
-              style: TextStyle(
-                fontSize: 13,
-                fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-                color: isSelected ? AppPalette.white : colors.textPrimary,
+    return Semantics(
+      button: true,
+      selected: isSelected,
+      label: '${category.title}, ${category.photoCount} photos',
+      child: Center(
+        child: CupertinoButton(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          minimumSize: Size.zero,
+          borderRadius: AppSpacing.borderRadiusFull,
+          color: isSelected
+              ? colors.accent
+              : colors.surfaceElevated.withValues(alpha: 0.8),
+          onPressed: () => onCategorySelected(category),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                _getCupertinoIcon(category.type),
+                size: 14,
+                color: isSelected ? AppPalette.white : colors.textSecondary,
               ),
-            ),
-          ],
+              const SizedBox(width: AppSpacing.xs),
+              Text(
+                '${category.title} (${category.photoCount})',
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                  color: isSelected ? AppPalette.white : colors.textPrimary,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

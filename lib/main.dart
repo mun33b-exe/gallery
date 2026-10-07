@@ -3,6 +3,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'app/app.dart';
+import 'core/services/media_cache_policy.dart';
 import 'core/services/preferences_service.dart';
 import 'features/auth/data/supabase_auth_repository.dart';
 import 'features/gallery/data/device_photo_repository.dart';
@@ -10,6 +11,9 @@ import 'features/search/data/mock_ai_photo_search_repository.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Initialize global image cache bounds
+  MediaCachePolicy.configure();
 
   // Initialize Supabase backend authentication
   await Supabase.initialize(

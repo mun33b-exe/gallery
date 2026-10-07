@@ -1,7 +1,8 @@
-import 'dart:typed_data';
+import 'dart:async';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
@@ -77,6 +78,11 @@ class _PhotoViewerScreenState extends State<PhotoViewerScreen> {
     final currentPhoto = _photos[_currentIndex];
     final updated = currentPhoto.copyWith(isFavorite: !currentPhoto.isFavorite);
 
+    final isIOS = Theme.of(context).platform == TargetPlatform.iOS;
+    if (isIOS) {
+      unawaited(HapticFeedback.lightImpact());
+    }
+
     setState(() {
       _photos[_currentIndex] = updated;
     });
@@ -94,6 +100,7 @@ class _PhotoViewerScreenState extends State<PhotoViewerScreen> {
     final isIOS = Theme.of(context).platform == TargetPlatform.iOS;
 
     if (isIOS) {
+      unawaited(HapticFeedback.selectionClick());
       await showCupertinoModalPopup<void>(
         context: context,
         builder: (modalContext) => CupertinoActionSheet(
@@ -283,23 +290,29 @@ class _PhotoViewerScreenState extends State<PhotoViewerScreen> {
       child: Row(
         children: [
           // Back button
-          if (isIOS)
-            CupertinoButton(
-              padding: EdgeInsets.zero,
-              minimumSize: const Size(36, 36),
-              onPressed: () => context.pop(),
-              child: const Icon(
-                CupertinoIcons.back,
-                color: AppPalette.white,
-                size: 26,
-              ),
-            )
-          else
-            IconButton(
-              icon: const Icon(Icons.arrow_back, color: AppPalette.white),
-              onPressed: () => context.pop(),
-              tooltip: 'Back',
-            ),
+          Semantics(
+            button: true,
+            label: 'Back',
+            child: isIOS
+                ? CupertinoButton(
+                    padding: EdgeInsets.zero,
+                    minimumSize: const Size(36, 36),
+                    onPressed: () {
+                      unawaited(HapticFeedback.selectionClick());
+                      context.pop();
+                    },
+                    child: const Icon(
+                      CupertinoIcons.back,
+                      color: AppPalette.white,
+                      size: 26,
+                    ),
+                  )
+                : IconButton(
+                    icon: const Icon(Icons.arrow_back, color: AppPalette.white),
+                    onPressed: () => context.pop(),
+                    tooltip: 'Back',
+                  ),
+          ),
 
           const SizedBox(width: AppSpacing.sm),
 
@@ -317,73 +330,89 @@ class _PhotoViewerScreenState extends State<PhotoViewerScreen> {
 
           // Favorite button
           if (photo != null) ...[
-            if (isIOS)
-              CupertinoButton(
-                padding: EdgeInsets.zero,
-                minimumSize: const Size(36, 36),
-                onPressed: _handleFavoriteToggle,
-                child: Icon(
-                  photo.isFavorite
-                      ? CupertinoIcons.heart_fill
-                      : CupertinoIcons.heart,
-                  color: photo.isFavorite
-                      ? AppPalette.rose500
-                      : AppPalette.white,
-                  size: 24,
-                ),
-              )
-            else
-              IconButton(
-                icon: Icon(
-                  photo.isFavorite ? Icons.favorite : Icons.favorite_border,
-                  color: photo.isFavorite
-                      ? AppPalette.rose500
-                      : AppPalette.white,
-                ),
-                tooltip: photo.isFavorite ? 'Unfavorite' : 'Favorite',
-                onPressed: _handleFavoriteToggle,
-              ),
+            Semantics(
+              button: true,
+              label: photo.isFavorite
+                  ? 'Remove from favorites'
+                  : 'Add to favorites',
+              child: isIOS
+                  ? CupertinoButton(
+                      padding: EdgeInsets.zero,
+                      minimumSize: const Size(36, 36),
+                      onPressed: _handleFavoriteToggle,
+                      child: Icon(
+                        photo.isFavorite
+                            ? CupertinoIcons.heart_fill
+                            : CupertinoIcons.heart,
+                        color: photo.isFavorite
+                            ? AppPalette.rose500
+                            : AppPalette.white,
+                        size: 24,
+                      ),
+                    )
+                  : IconButton(
+                      icon: Icon(
+                        photo.isFavorite
+                            ? Icons.favorite
+                            : Icons.favorite_border,
+                        color: photo.isFavorite
+                            ? AppPalette.rose500
+                            : AppPalette.white,
+                      ),
+                      tooltip: photo.isFavorite ? 'Unfavorite' : 'Favorite',
+                      onPressed: _handleFavoriteToggle,
+                    ),
+            ),
 
             // Share button
-            if (isIOS)
-              CupertinoButton(
-                padding: EdgeInsets.zero,
-                minimumSize: const Size(36, 36),
-                onPressed: _handleShare,
-                child: const Icon(
-                  CupertinoIcons.share,
-                  color: AppPalette.white,
-                  size: 24,
-                ),
-              )
-            else
-              IconButton(
-                icon: const Icon(Icons.share_outlined, color: AppPalette.white),
-                tooltip: 'Share',
-                onPressed: _handleShare,
-              ),
+            Semantics(
+              button: true,
+              label: 'Share photo',
+              child: isIOS
+                  ? CupertinoButton(
+                      padding: EdgeInsets.zero,
+                      minimumSize: const Size(36, 36),
+                      onPressed: _handleShare,
+                      child: const Icon(
+                        CupertinoIcons.share,
+                        color: AppPalette.white,
+                        size: 24,
+                      ),
+                    )
+                  : IconButton(
+                      icon: const Icon(
+                        Icons.share_outlined,
+                        color: AppPalette.white,
+                      ),
+                      tooltip: 'Share',
+                      onPressed: _handleShare,
+                    ),
+            ),
 
             // Delete button
-            if (isIOS)
-              CupertinoButton(
-                padding: EdgeInsets.zero,
-                minimumSize: const Size(36, 36),
-                onPressed: _handleDelete,
-                child: const Icon(
-                  CupertinoIcons.trash,
-                  color: AppPalette.rose500,
-                  size: 24,
-                ),
-              )
-            else
-              IconButton(
-                icon: const Icon(
-                  Icons.delete_outline,
-                  color: AppPalette.rose500,
-                ),
-                tooltip: 'Delete',
-                onPressed: _handleDelete,
-              ),
+            Semantics(
+              button: true,
+              label: 'Delete photo',
+              child: isIOS
+                  ? CupertinoButton(
+                      padding: EdgeInsets.zero,
+                      minimumSize: const Size(36, 36),
+                      onPressed: _handleDelete,
+                      child: const Icon(
+                        CupertinoIcons.trash,
+                        color: AppPalette.rose500,
+                        size: 24,
+                      ),
+                    )
+                  : IconButton(
+                      icon: const Icon(
+                        Icons.delete_outline,
+                        color: AppPalette.rose500,
+                      ),
+                      tooltip: 'Delete',
+                      onPressed: _handleDelete,
+                    ),
+            ),
           ],
         ],
       ),
@@ -586,7 +615,14 @@ class _InteractivePhotoViewState extends State<_InteractivePhotoView> {
         onTap: widget.onTap,
         onDoubleTapDown: _handleDoubleTapDown,
         onDoubleTap: () {}, // Required so onDoubleTapDown fires properly
-        child: SizedBox.expand(child: Center(child: _buildImageContent())),
+        child: SizedBox.expand(
+          child: Center(
+            child: Hero(
+              tag: 'photo_${widget.photo.id}',
+              child: _buildImageContent(),
+            ),
+          ),
+        ),
       ),
     );
   }

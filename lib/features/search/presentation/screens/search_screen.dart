@@ -145,13 +145,17 @@ class _SearchScreenState extends State<SearchScreen> {
               ),
             ),
             const SizedBox(width: AppSpacing.sm),
-            CupertinoButton(
-              padding: EdgeInsets.zero,
-              minimumSize: const Size(40, 36),
-              onPressed: () => context.pop(),
-              child: Text(
-                'Cancel',
-                style: TextStyle(color: colors.accent, fontSize: 15),
+            Semantics(
+              button: true,
+              label: 'Cancel search',
+              child: CupertinoButton(
+                padding: EdgeInsets.zero,
+                minimumSize: const Size(40, 36),
+                onPressed: () => context.pop(),
+                child: Text(
+                  'Cancel',
+                  style: TextStyle(color: colors.accent, fontSize: 15),
+                ),
               ),
             ),
           ],
@@ -171,10 +175,14 @@ class _SearchScreenState extends State<SearchScreen> {
         ),
         child: Row(
           children: [
-            IconButton(
-              icon: Icon(Icons.arrow_back, color: colors.textPrimary),
-              tooltip: 'Back',
-              onPressed: () => context.pop(),
+            Semantics(
+              button: true,
+              label: 'Back',
+              child: IconButton(
+                icon: Icon(Icons.arrow_back, color: colors.textPrimary),
+                tooltip: 'Back',
+                onPressed: () => context.pop(),
+              ),
             ),
             Expanded(
               child: Container(
@@ -190,36 +198,44 @@ class _SearchScreenState extends State<SearchScreen> {
                     Icon(Icons.auto_awesome, color: colors.accent, size: 18),
                     const SizedBox(width: AppSpacing.sm),
                     Expanded(
-                      child: TextField(
-                        controller: _searchController,
-                        focusNode: _focusNode,
-                        style: TextStyle(
-                          color: colors.textPrimary,
-                          fontSize: 15,
-                        ),
-                        decoration: InputDecoration(
-                          hintText: "Search photos with AI (e.g. 'dogs')...",
-                          hintStyle: TextStyle(
-                            color: colors.textMuted,
-                            fontSize: 14,
+                      child: Semantics(
+                        textField: true,
+                        label: 'Search photos with natural language',
+                        child: TextField(
+                          controller: _searchController,
+                          focusNode: _focusNode,
+                          style: TextStyle(
+                            color: colors.textPrimary,
+                            fontSize: 15,
                           ),
-                          border: InputBorder.none,
-                          isDense: true,
-                          contentPadding: EdgeInsets.zero,
+                          decoration: InputDecoration(
+                            hintText: "Search photos with AI (e.g. 'dogs')...",
+                            hintStyle: TextStyle(
+                              color: colors.textMuted,
+                              fontSize: 14,
+                            ),
+                            border: InputBorder.none,
+                            isDense: true,
+                            contentPadding: EdgeInsets.zero,
+                          ),
+                          onSubmitted: _onSearchSubmitted,
                         ),
-                        onSubmitted: _onSearchSubmitted,
                       ),
                     ),
                     ValueListenableBuilder<TextEditingValue>(
                       valueListenable: _searchController,
                       builder: (context, value, _) {
                         if (value.text.isEmpty) return const SizedBox.shrink();
-                        return GestureDetector(
-                          onTap: _onClear,
-                          child: Icon(
-                            Icons.close_rounded,
-                            color: colors.textSecondary,
-                            size: 18,
+                        return Semantics(
+                          button: true,
+                          label: 'Clear search query',
+                          child: GestureDetector(
+                            onTap: _onClear,
+                            child: Icon(
+                              Icons.close_rounded,
+                              color: colors.textSecondary,
+                              size: 18,
+                            ),
                           ),
                         );
                       },
