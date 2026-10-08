@@ -13,8 +13,10 @@ abstract final class AppIcons {
   static const String codeXml = 'assets/icons/code-xml.svg';
   static const String coffee = 'assets/icons/coffee.svg';
   static const String compass = 'assets/icons/compass.svg';
+  static const String crown = 'assets/icons/crown.svg';
   static const String database = 'assets/icons/database.svg';
   static const String fileText = 'assets/icons/file-text.svg';
+  static const String gallery = 'assets/icons/gallery-vertical-end.svg';
   static const String heart = 'assets/icons/heart.svg';
   static const String imageOff = 'assets/icons/image-off.svg';
   static const String image = 'assets/icons/image.svg';

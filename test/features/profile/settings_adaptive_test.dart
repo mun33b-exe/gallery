@@ -141,6 +141,8 @@ void main() {
     testWidgets(
       'Profile screen renders CupertinoAlertDialog on iOS vs Material AlertDialog on Android on sign out',
       (tester) async {
+        setLargeViewport(tester);
+
         // Test iOS dialog
         await tester.pumpWidget(
           createAdaptiveProfileApp(platform: TargetPlatform.iOS),
@@ -148,7 +150,6 @@ void main() {
         await tester.pumpAndSettle();
 
         final signOutFinder = find.text('Sign Out');
-        await tester.ensureVisible(signOutFinder);
         await tester.tap(signOutFinder);
         await tester.pumpAndSettle();
 
@@ -164,7 +165,6 @@ void main() {
         );
         await tester.pumpAndSettle();
 
-        await tester.ensureVisible(signOutFinder);
         await tester.tap(signOutFinder);
         await tester.pumpAndSettle();
 

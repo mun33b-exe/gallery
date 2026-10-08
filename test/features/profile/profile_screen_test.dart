@@ -31,6 +31,15 @@ void main() {
       authRepo.dispose();
     });
 
+    void setLargeViewport(WidgetTester tester) {
+      tester.view.physicalSize = const Size(800, 2400);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(() {
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+      });
+    }
+
     Widget createProfileTestApp({
       UserEntitlement entitlement = UserEntitlement.freeTier,
       GoRouter? router,
@@ -46,9 +55,9 @@ void main() {
                     ProfileScreen(entitlement: entitlement),
               ),
               GoRoute(
-                path: '/settings',
+                path: '/home',
                 builder: (context, state) =>
-                    const Scaffold(body: Text('Settings Destination')),
+                    const Scaffold(body: Text('Home Destination')),
               ),
             ],
           );
@@ -65,6 +74,8 @@ void main() {
     testWidgets(
       'renders user information with avatar initials, name, and email',
       (tester) async {
+        setLargeViewport(tester);
+
         await tester.pumpWidget(createProfileTestApp());
         await tester.pumpAndSettle();
 
@@ -72,12 +83,15 @@ void main() {
         expect(find.text('sarah.connor@example.com'), findsOneWidget);
         expect(find.text('S'), findsOneWidget); // Avatar initial
         expect(find.text('Profile'), findsOneWidget);
+        expect(find.text('Manage your account and plan'), findsOneWidget);
       },
     );
 
     testWidgets(
       'renders Free Plan entitlement badge and preview feature cards',
       (tester) async {
+        setLargeViewport(tester);
+
         await tester.pumpWidget(
           createProfileTestApp(entitlement: UserEntitlement.freeTier),
         );
@@ -99,6 +113,8 @@ void main() {
     testWidgets('renders Pro Member badge when entitlement is premium', (
       tester,
     ) async {
+      setLargeViewport(tester);
+
       await tester.pumpWidget(
         createProfileTestApp(entitlement: UserEntitlement.premiumTier),
       );
@@ -107,9 +123,49 @@ void main() {
       expect(find.text('Pro Member'), findsOneWidget);
     });
 
+    testWidgets('tapping Preview on feature card opens detail bottom sheet', (
+      tester,
+    ) async {
+      setLargeViewport(tester);
+
+      await tester.pumpWidget(createProfileTestApp());
+      await tester.pumpAndSettle();
+
+      final firstPreviewBtn = find.text('Preview').first;
+      await tester.tap(firstPreviewBtn);
+      await tester.pumpAndSettle();
+
+      expect(find.text('Coming Soon'), findsOneWidget);
+      expect(find.text('Got it'), findsOneWidget);
+
+      await tester.tap(find.text('Got it'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Coming Soon'), findsNothing);
+    });
+
+    testWidgets('tapping back button in header navigates back', (tester) async {
+      setLargeViewport(tester);
+
+      await tester.pumpWidget(createProfileTestApp());
+      await tester.pumpAndSettle();
+
+      final backBtn = find.byWidgetPredicate(
+        (w) => w is Semantics && w.properties.label == 'Back',
+      );
+      expect(backBtn, findsOneWidget);
+
+      await tester.tap(backBtn);
+      await tester.pumpAndSettle();
+
+      expect(find.text('Home Destination'), findsOneWidget);
+    });
+
     testWidgets(
       'tapping Sign Out shows confirmation dialog, confirming triggers logout',
       (tester) async {
+        setLargeViewport(tester);
+
         await tester.pumpWidget(createProfileTestApp());
         await tester.pumpAndSettle();
 
@@ -118,7 +174,6 @@ void main() {
         final signOutButton = find.text('Sign Out');
         expect(signOutButton, findsOneWidget);
 
-        await tester.ensureVisible(signOutButton);
         await tester.tap(signOutButton);
         await tester.pumpAndSettle();
 
@@ -140,11 +195,12 @@ void main() {
     testWidgets('cancelling sign out dialog does not trigger logout', (
       tester,
     ) async {
+      setLargeViewport(tester);
+
       await tester.pumpWidget(createProfileTestApp());
       await tester.pumpAndSettle();
 
       final signOutButton = find.text('Sign Out');
-      await tester.ensureVisible(signOutButton);
       await tester.tap(signOutButton);
       await tester.pumpAndSettle();
 
@@ -153,21 +209,6 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(authRepo.currentUser, isNotNull);
-    });
-
-    testWidgets('settings icon in header navigates to /settings', (
-      tester,
-    ) async {
-      await tester.pumpWidget(createProfileTestApp());
-      await tester.pumpAndSettle();
-
-      final settingsIcon = find.byIcon(Icons.settings_outlined);
-      expect(settingsIcon, findsOneWidget);
-
-      await tester.tap(settingsIcon);
-      await tester.pumpAndSettle();
-
-      expect(find.text('Settings Destination'), findsOneWidget);
     });
   });
 }

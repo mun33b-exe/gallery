@@ -125,7 +125,7 @@ class FloatingLibraryNavBar extends StatelessWidget {
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
                                     AppSvgIcon(
-                                      AppIcons.bookOpen,
+                                      AppIcons.gallery,
                                       color: selectedIndex == 0
                                           ? Colors.white
                                           : const Color(0xFF6B7280),

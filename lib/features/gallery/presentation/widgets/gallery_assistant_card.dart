@@ -148,7 +148,7 @@ class GalleryAssistantCard extends StatelessWidget {
                     ),
                     child: const Center(
                       child: AppSvgIcon(
-                        AppIcons.slidersHorizontal,
+                        AppIcons.search,
                         color: Color(0xFF111827),
                         size: 20,
                       ),
