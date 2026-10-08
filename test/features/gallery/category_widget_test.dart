@@ -5,7 +5,7 @@ import 'package:gallery/app/theme/theme_cubit.dart';
 import 'package:gallery/features/gallery/data/mock_photo_repository.dart';
 import 'package:gallery/features/gallery/domain/photo_model.dart';
 import 'package:gallery/features/gallery/presentation/cubit/gallery_cubit.dart';
-import 'package:gallery/features/gallery/presentation/screens/gallery_screen.dart';
+import 'package:gallery/features/gallery/presentation/screens/home_screen.dart';
 import 'package:gallery/features/gallery/presentation/widgets/category_filter_bar.dart';
 import 'package:gallery/features/gallery/presentation/widgets/photo_thumbnail_tile.dart';
 
@@ -49,7 +49,7 @@ void main() {
           BlocProvider<GalleryCubit>.value(value: galleryCubit),
           BlocProvider<ThemeCubit>(create: (_) => ThemeCubit()),
         ],
-        child: const MaterialApp(home: GalleryScreen()),
+        child: const MaterialApp(home: HomeScreen()),
       );
     }
 

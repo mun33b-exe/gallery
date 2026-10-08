@@ -4,7 +4,7 @@ import 'package:gallery/app/app.dart';
 import 'package:gallery/features/auth/data/mock_auth_repository.dart';
 import 'package:gallery/features/auth/presentation/screens/login_screen.dart';
 import 'package:gallery/features/gallery/data/mock_photo_repository.dart';
-import 'package:gallery/features/gallery/presentation/screens/gallery_screen.dart';
+import 'package:gallery/features/gallery/presentation/screens/home_screen.dart';
 import 'package:gallery/features/gallery/presentation/screens/photo_viewer_screen.dart';
 import 'package:gallery/features/gallery/presentation/widgets/photo_thumbnail_tile.dart';
 
@@ -38,15 +38,17 @@ void main() {
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 400));
 
-      // User is authenticated and GoRouter redirects to /home (GalleryScreen)
-      expect(find.byType(GalleryScreen), findsOneWidget);
-      expect(find.text('Photos'), findsOneWidget);
+      // User is authenticated and GoRouter redirects to /home (HomeScreen)
+      expect(find.byType(HomeScreen), findsOneWidget);
+      expect(find.text('Your Library'), findsOneWidget);
 
       // Allow thumbnails to load
       await tester.pump();
       expect(find.byType(PhotoThumbnailTile), findsWidgets);
 
       // Tap first thumbnail to open PhotoViewerScreen
+      await tester.ensureVisible(find.byType(PhotoThumbnailTile).first);
+      await tester.pumpAndSettle();
       await tester.tap(find.byType(PhotoThumbnailTile).first);
       await tester.pumpAndSettle();
 
@@ -57,11 +59,13 @@ void main() {
       await tester.tap(find.byTooltip('Back'));
       await tester.pumpAndSettle();
 
-      // Returned to GalleryScreen
-      expect(find.byType(GalleryScreen), findsOneWidget);
+      // Returned to HomeScreen
+      expect(find.byType(HomeScreen), findsOneWidget);
 
       // Tap Settings button in header
-      await tester.tap(find.byIcon(Icons.settings_outlined));
+      await tester.ensureVisible(find.byTooltip('Settings'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byTooltip('Settings'));
       await tester.pumpAndSettle();
 
       expect(find.text('Settings'), findsOneWidget);

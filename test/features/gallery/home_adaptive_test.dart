@@ -1,4 +1,3 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -7,10 +6,11 @@ import 'package:gallery/app/theme/theme_cubit.dart';
 import 'package:gallery/features/gallery/data/mock_photo_repository.dart';
 import 'package:gallery/features/gallery/domain/photo_repository.dart';
 import 'package:gallery/features/gallery/presentation/cubit/gallery_cubit.dart';
-import 'package:gallery/features/gallery/presentation/screens/gallery_screen.dart';
+import 'package:gallery/features/gallery/presentation/screens/home_screen.dart';
+import 'package:gallery/features/gallery/presentation/widgets/floating_library_nav_bar.dart';
 
 void main() {
-  group('GalleryScreen Adaptive Presentation (Rule 5.3)', () {
+  group('HomeScreen Adaptive Presentation (Rule 5.3)', () {
     late ThemeCubit themeCubit;
     late MockPhotoRepository mockRepo;
     late GalleryCubit galleryCubit;
@@ -29,7 +29,7 @@ void main() {
       await galleryCubit.close();
     });
 
-    Widget createAdaptiveGalleryTestApp(TargetPlatform platform) {
+    Widget createAdaptiveHomeTestApp(TargetPlatform platform) {
       final baseTheme = AppThemes.defaultTheme.themeData;
       return MultiBlocProvider(
         providers: [
@@ -38,33 +38,33 @@ void main() {
         ],
         child: MaterialApp(
           theme: baseTheme.copyWith(platform: platform),
-          home: const GalleryScreen(),
+          home: const HomeScreen(),
         ),
       );
     }
 
-    testWidgets('GalleryScreen renders Material AppBar on Android', (
+    testWidgets('HomeScreen renders cleanly on Android platform', (
       tester,
     ) async {
       await tester.pumpWidget(
-        createAdaptiveGalleryTestApp(TargetPlatform.android),
+        createAdaptiveHomeTestApp(TargetPlatform.android),
       );
       await tester.pump();
       await tester.pump();
 
-      expect(find.byType(AppBar), findsOneWidget);
-      expect(find.byType(CupertinoNavigationBar), findsNothing);
+      expect(find.byType(HomeScreen), findsOneWidget);
+      expect(find.text('Your Library'), findsOneWidget);
+      expect(find.byType(FloatingLibraryNavBar), findsOneWidget);
     });
 
-    testWidgets('GalleryScreen renders CupertinoNavigationBar on iOS', (
-      tester,
-    ) async {
-      await tester.pumpWidget(createAdaptiveGalleryTestApp(TargetPlatform.iOS));
+    testWidgets('HomeScreen renders cleanly on iOS platform', (tester) async {
+      await tester.pumpWidget(createAdaptiveHomeTestApp(TargetPlatform.iOS));
       await tester.pump();
       await tester.pump();
 
-      expect(find.byType(CupertinoNavigationBar), findsOneWidget);
-      expect(find.byType(AppBar), findsNothing);
+      expect(find.byType(HomeScreen), findsOneWidget);
+      expect(find.text('Your Library'), findsOneWidget);
+      expect(find.byType(FloatingLibraryNavBar), findsOneWidget);
     });
   });
 }

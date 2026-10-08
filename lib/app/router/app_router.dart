@@ -11,7 +11,7 @@ import '../../features/auth/presentation/screens/login_screen.dart';
 import '../../features/auth/presentation/screens/register_screen.dart';
 import '../../features/auth/presentation/screens/splash_screen.dart';
 import '../../features/gallery/presentation/cubit/gallery_cubit.dart';
-import '../../features/gallery/presentation/screens/gallery_screen.dart';
+import '../../features/gallery/presentation/screens/home_screen.dart';
 import '../../features/gallery/presentation/screens/photo_viewer_screen.dart';
 import '../../features/profile/presentation/screens/profile_screen.dart';
 import '../../features/profile/presentation/screens/settings_screen.dart';
@@ -104,7 +104,7 @@ class AppRouter {
         ),
         GoRoute(
           path: homePath,
-          builder: (context, state) => const GalleryScreen(),
+          builder: (context, state) => const HomeScreen(),
         ),
         GoRoute(
           path: photoViewerPath,

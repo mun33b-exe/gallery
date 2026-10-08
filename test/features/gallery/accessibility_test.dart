@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
+
 import 'package:gallery/app/theme/theme_cubit.dart';
 import 'package:gallery/features/gallery/data/mock_photo_repository.dart';
 import 'package:gallery/features/gallery/domain/category_model.dart';
 import 'package:gallery/features/gallery/domain/photo_model.dart';
+import 'package:gallery/features/gallery/presentation/cubit/gallery_cubit.dart';
+import 'package:gallery/features/gallery/presentation/screens/home_screen.dart';
 import 'package:gallery/features/gallery/presentation/screens/photo_viewer_screen.dart';
 import 'package:gallery/features/gallery/presentation/widgets/category_filter_bar.dart';
 import 'package:gallery/features/gallery/presentation/widgets/photo_thumbnail_tile.dart';
@@ -255,6 +258,38 @@ void main() {
 
         // Expect no RenderFlex exception occurred at 2.0x font scaling
         expect(tester.takeException(), isNull);
+      },
+    );
+
+    testWidgets(
+      'Dynamic Type: HomeScreen renders safely at 200% font scaling without overflow',
+      (tester) async {
+        final galleryCubit = GalleryCubit(photoRepository: mockRepo);
+
+        await tester.pumpWidget(
+          MultiBlocProvider(
+            providers: [
+              BlocProvider<ThemeCubit>.value(value: themeCubit),
+              BlocProvider<GalleryCubit>.value(value: galleryCubit),
+            ],
+            child: MaterialApp(
+              home: MediaQuery(
+                data: const MediaQueryData(
+                  size: Size(390, 844),
+                  textScaler: TextScaler.linear(2.0),
+                ),
+                child: const HomeScreen(),
+              ),
+            ),
+          ),
+        );
+        await tester.pump();
+        await tester.pump();
+
+        expect(find.byType(HomeScreen), findsOneWidget);
+        expect(tester.takeException(), isNull);
+
+        await galleryCubit.close();
       },
     );
   });

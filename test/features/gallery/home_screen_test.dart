@@ -6,11 +6,11 @@ import 'package:gallery/features/gallery/data/mock_photo_repository.dart';
 import 'package:gallery/features/gallery/domain/photo_model.dart';
 import 'package:gallery/features/gallery/domain/photo_repository.dart';
 import 'package:gallery/features/gallery/presentation/cubit/gallery_cubit.dart';
-import 'package:gallery/features/gallery/presentation/screens/gallery_screen.dart';
+import 'package:gallery/features/gallery/presentation/screens/home_screen.dart';
 import 'package:gallery/features/gallery/presentation/widgets/photo_thumbnail_tile.dart';
 
 void main() {
-  group('GalleryScreen UI State Rendering', () {
+  group('HomeScreen UI State Rendering', () {
     late ThemeCubit themeCubit;
 
     setUp(() {
@@ -21,7 +21,7 @@ void main() {
       await themeCubit.close();
     });
 
-    Widget createGalleryScreenTestApp({
+    Widget createHomeScreenTestApp({
       required GalleryCubit galleryCubit,
       VoidCallback? onOpenSettings,
     }) {
@@ -30,7 +30,7 @@ void main() {
           BlocProvider<ThemeCubit>.value(value: themeCubit),
           BlocProvider<GalleryCubit>.value(value: galleryCubit),
         ],
-        child: MaterialApp(home: GalleryScreen(onOpenSettings: onOpenSettings)),
+        child: MaterialApp(home: HomeScreen(onOpenSettings: onOpenSettings)),
       );
     }
 
@@ -46,7 +46,7 @@ void main() {
         bool settingsTapped = false;
 
         await tester.pumpWidget(
-          createGalleryScreenTestApp(
+          createHomeScreenTestApp(
             galleryCubit: cubit,
             onOpenSettings: () {
               settingsTapped = true;
@@ -79,7 +79,7 @@ void main() {
       );
       final cubit = GalleryCubit(photoRepository: emptyRepo);
 
-      await tester.pumpWidget(createGalleryScreenTestApp(galleryCubit: cubit));
+      await tester.pumpWidget(createHomeScreenTestApp(galleryCubit: cubit));
       await tester.pump();
       await tester.pump();
 
@@ -90,7 +90,7 @@ void main() {
     });
 
     testWidgets(
-      'renders responsive grid with PhotoThumbnailTiles when loaded',
+      'renders Your Library header, Assistant Card, suggestions, and recent photos when loaded',
       (tester) async {
         final photos = List.generate(
           12,
@@ -110,14 +110,40 @@ void main() {
         );
         final cubit = GalleryCubit(photoRepository: repo);
 
+        bool settingsTapped = false;
+
         await tester.pumpWidget(
-          createGalleryScreenTestApp(galleryCubit: cubit),
+          createHomeScreenTestApp(
+            galleryCubit: cubit,
+            onOpenSettings: () {
+              settingsTapped = true;
+            },
+          ),
         );
         await tester.pump();
         await tester.pump();
 
+        // Header
+        expect(find.text('Good morning,'), findsOneWidget);
+        expect(find.text('Your Library'), findsOneWidget);
+
+        // Assistant Card
+        expect(find.text('Your personal Gallery Assistant'), findsOneWidget);
+        expect(find.text('Search Photos'), findsOneWidget);
+        expect(find.text('People'), findsOneWidget);
+        expect(find.text('Places'), findsOneWidget);
+        expect(find.text('Favorites'), findsOneWidget);
+        expect(find.text('Recently added'), findsOneWidget);
+
+        // Suggestions & Recent
+        expect(find.text('Suggestions'), findsOneWidget);
+        expect(find.text('Recent'), findsOneWidget);
         expect(find.byType(PhotoThumbnailTile), findsWidgets);
-        expect(find.text('Photos'), findsOneWidget);
+
+        // Tap settings profile avatar
+        await tester.tap(find.byTooltip('Settings'));
+        await tester.pump();
+        expect(settingsTapped, isTrue);
 
         await cubit.close();
       },
