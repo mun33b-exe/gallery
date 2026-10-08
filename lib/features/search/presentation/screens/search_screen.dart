@@ -1,23 +1,27 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gallery/app/theme/app_spacing.dart';
-import 'package:gallery/app/theme/app_theme.dart';
 import 'package:gallery/core/responsive/responsive.dart';
-import 'package:gallery/core/widgets/adaptive/adaptive_button.dart';
-import 'package:gallery/core/widgets/adaptive/adaptive_progress_indicator.dart';
+import 'package:gallery/features/gallery/data/mock_photo_repository.dart';
+import 'package:gallery/features/gallery/domain/photo_model.dart';
+import 'package:gallery/features/gallery/domain/photo_repository.dart';
 import 'package:gallery/features/gallery/presentation/cubit/gallery_cubit.dart';
 import 'package:gallery/features/gallery/presentation/screens/photo_viewer_screen.dart';
-import 'package:gallery/features/gallery/presentation/widgets/photo_thumbnail_tile.dart';
 import 'package:go_router/go_router.dart';
 
 import '../cubit/search_cubit.dart';
 import '../cubit/search_state.dart';
-import '../widgets/suggested_prompts_view.dart';
+import '../widgets/ai_search_header.dart';
+import '../widgets/conversation_message_view.dart';
+import '../widgets/example_queries_view.dart';
+import '../widgets/persistent_ai_input_bar.dart';
+import '../widgets/recent_searches_chips.dart';
+import '../widgets/suggested_searches_grid.dart';
 
-/// Platform-adaptive AI natural-language search screen.
-/// Implements suggested prompts, recent search history, responsive results grid,
-/// and seamless navigation into PhotoViewerScreen (Rule 5.3).
+/// Conversational "AI Gallery Search" screen matching design specification.
+/// Features a spacious white-first layout, bold header, 2-column pastel suggested searches,
+/// horizontal recent searches, highlighted example queries, continuous conversational feed,
+/// rich photo/document/financial evidence cards, and a persistent bottom AI input bar.
 class SearchScreen extends StatefulWidget {
   const SearchScreen({super.key});
 
@@ -28,6 +32,7 @@ class SearchScreen extends StatefulWidget {
 class _SearchScreenState extends State<SearchScreen> {
   final TextEditingController _searchController = TextEditingController();
   final FocusNode _focusNode = FocusNode();
+  final ScrollController _scrollController = ScrollController();
 
   @override
   void initState() {
@@ -41,474 +46,307 @@ class _SearchScreenState extends State<SearchScreen> {
   void dispose() {
     _searchController.dispose();
     _focusNode.dispose();
+    _scrollController.dispose();
     super.dispose();
+  }
+
+  void _scrollToBottom() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_scrollController.hasClients) {
+        _scrollController.animateTo(
+          _scrollController.position.maxScrollExtent,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeOut,
+        );
+      }
+    });
   }
 
   void _onSearchSubmitted(String query) {
     if (query.trim().isEmpty) return;
     _focusNode.unfocus();
+    _searchController.text = query;
     context.read<SearchCubit>().search(query);
+    _scrollToBottom();
   }
 
-  void _onSelectPrompt(String prompt) {
-    _searchController.text = prompt;
-    _focusNode.unfocus();
-    context.read<SearchCubit>().search(prompt);
-  }
-
-  void _onClear() {
-    _searchController.clear();
-    context.read<SearchCubit>().clearSearch();
+  void _openPhotoViewer(List<PhotoModel> photos, int initialIndex) {
+    context.push(
+      '/photo-viewer',
+      extra: PhotoViewerArgs(photos: photos, initialIndex: initialIndex),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    final colors = context.colors;
-    final isIOS = Theme.of(context).platform == TargetPlatform.iOS;
+    final gutter = Responsive.horizontalGutter(context);
 
     return Scaffold(
-      backgroundColor: colors.surfacePrimary,
+      backgroundColor: Colors.white,
       body: SafeArea(
         child: Column(
           children: [
-            // Top platform-adaptive search header
-            _buildSearchHeader(context, isIOS),
-
-            // Content body driven by SearchCubit
+            // Top Section & Conversation / Search Feed
             Expanded(
-              child: BlocBuilder<SearchCubit, SearchState>(
-                builder: (context, state) {
-                  if (state is SearchLoading) {
-                    return _buildLoadingView(context, state.query);
+              child: BlocConsumer<SearchCubit, SearchState>(
+                listener: (context, state) {
+                  if (state.messages.isNotEmpty) {
+                    _scrollToBottom();
                   }
-
-                  if (state is SearchError) {
-                    return _buildErrorView(context, state);
-                  }
-
-                  if (state is SearchEmpty) {
-                    return _buildEmptyView(context, state);
-                  }
-
-                  if (state is SearchSuccess) {
-                    return _buildResultsView(context, state);
-                  }
-
-                  if (state is SearchInitial) {
-                    return _buildInitialView(context, state);
-                  }
-
-                  return const SizedBox.shrink();
                 },
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+                builder: (context, state) {
+                  PhotoRepository photoRepo;
+                  try {
+                    photoRepo = context.read<GalleryCubit>().photoRepository;
+                  } catch (_) {
+                    photoRepo = MockPhotoRepository();
+                  }
+                  final hasMessages = state.messages.isNotEmpty;
 
-  Widget _buildSearchHeader(BuildContext context, bool isIOS) {
-    final colors = context.colors;
-
-    if (isIOS) {
-      return Container(
-        padding: const EdgeInsets.fromLTRB(
-          AppSpacing.md,
-          AppSpacing.sm,
-          AppSpacing.md,
-          AppSpacing.sm,
-        ),
-        decoration: BoxDecoration(
-          color: colors.surfacePrimary,
-          border: Border(bottom: BorderSide(color: colors.border)),
-        ),
-        child: Row(
-          children: [
-            Expanded(
-              child: CupertinoSearchTextField(
-                controller: _searchController,
-                focusNode: _focusNode,
-                placeholder: "Search photos with AI (e.g. 'dogs')...",
-                style: TextStyle(color: colors.textPrimary, fontSize: 15),
-                placeholderStyle: TextStyle(
-                  color: colors.textMuted,
-                  fontSize: 14,
-                ),
-                prefixIcon: Icon(
-                  CupertinoIcons.sparkles,
-                  color: colors.accent,
-                  size: 18,
-                ),
-                onSubmitted: _onSearchSubmitted,
-                onSuffixTap: _onClear,
-              ),
-            ),
-            const SizedBox(width: AppSpacing.sm),
-            Semantics(
-              button: true,
-              label: 'Cancel search',
-              child: CupertinoButton(
-                padding: EdgeInsets.zero,
-                minimumSize: const Size(40, 36),
-                onPressed: () => context.pop(),
-                child: Text(
-                  'Cancel',
-                  style: TextStyle(color: colors.accent, fontSize: 15),
-                ),
-              ),
-            ),
-          ],
-        ),
-      );
-    } else {
-      return Container(
-        padding: const EdgeInsets.fromLTRB(
-          AppSpacing.xs,
-          AppSpacing.xs,
-          AppSpacing.md,
-          AppSpacing.xs,
-        ),
-        decoration: BoxDecoration(
-          color: colors.surfacePrimary,
-          border: Border(bottom: BorderSide(color: colors.border)),
-        ),
-        child: Row(
-          children: [
-            Semantics(
-              button: true,
-              label: 'Back',
-              child: IconButton(
-                icon: Icon(Icons.arrow_back, color: colors.textPrimary),
-                tooltip: 'Back',
-                onPressed: () => context.pop(),
-              ),
-            ),
-            Expanded(
-              child: Container(
-                height: 44,
-                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
-                decoration: BoxDecoration(
-                  color: colors.surfaceSecondary,
-                  borderRadius: AppSpacing.borderRadiusFull,
-                  border: Border.all(color: colors.border),
-                ),
-                child: Row(
-                  children: [
-                    Icon(Icons.auto_awesome, color: colors.accent, size: 18),
-                    const SizedBox(width: AppSpacing.sm),
-                    Expanded(
-                      child: Semantics(
-                        textField: true,
-                        label: 'Search photos with natural language',
-                        child: TextField(
-                          controller: _searchController,
-                          focusNode: _focusNode,
-                          style: TextStyle(
-                            color: colors.textPrimary,
-                            fontSize: 15,
+                  return CustomScrollView(
+                    controller: _scrollController,
+                    physics: const AlwaysScrollableScrollPhysics(
+                      parent: BouncingScrollPhysics(),
+                    ),
+                    slivers: [
+                      // Header: Circular Back button + Title & Subtitle
+                      SliverPadding(
+                        padding: EdgeInsets.fromLTRB(
+                          gutter,
+                          AppSpacing.sm,
+                          gutter,
+                          AppSpacing.md,
+                        ),
+                        sliver: SliverToBoxAdapter(
+                          child: AiSearchHeader(
+                            onBackTap: () {
+                              if (context.canPop()) {
+                                context.pop();
+                              }
+                            },
                           ),
-                          decoration: InputDecoration(
-                            hintText: "Search photos with AI (e.g. 'dogs')...",
-                            hintStyle: TextStyle(
-                              color: colors.textMuted,
-                              fontSize: 14,
-                            ),
-                            border: InputBorder.none,
-                            isDense: true,
-                            contentPadding: EdgeInsets.zero,
-                          ),
-                          onSubmitted: _onSearchSubmitted,
                         ),
                       ),
-                    ),
-                    ValueListenableBuilder<TextEditingValue>(
-                      valueListenable: _searchController,
-                      builder: (context, value, _) {
-                        if (value.text.isEmpty) return const SizedBox.shrink();
-                        return Semantics(
-                          button: true,
-                          label: 'Clear search query',
-                          child: GestureDetector(
-                            onTap: _onClear,
-                            child: Icon(
-                              Icons.close_rounded,
-                              color: colors.textSecondary,
-                              size: 18,
+
+                      // If conversation has messages, render conversational feed
+                      if (hasMessages) ...[
+                        SliverPadding(
+                          padding: EdgeInsets.symmetric(horizontal: gutter),
+                          sliver: SliverList(
+                            delegate: SliverChildBuilderDelegate((
+                              context,
+                              index,
+                            ) {
+                              final message = state.messages[index];
+                              return ConversationMessageView(
+                                message: message,
+                                photoRepository: photoRepo,
+                                onPhotoTap: (photo, idx) {
+                                  _openPhotoViewer(message.photos, idx);
+                                },
+                                onSeeAllPhotos: () {
+                                  if (message.photos.isNotEmpty) {
+                                    _openPhotoViewer(message.photos, 0);
+                                  }
+                                },
+                              );
+                            }, childCount: state.messages.length),
+                          ),
+                        ),
+
+                        // Loading typing indicator
+                        if (state is SearchLoading)
+                          SliverPadding(
+                            padding: EdgeInsets.all(gutter),
+                            sliver: const SliverToBoxAdapter(
+                              child: Center(
+                                child: Padding(
+                                  padding: EdgeInsets.all(16),
+                                  child: SizedBox(
+                                    width: 24,
+                                    height: 24,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2.5,
+                                      valueColor: AlwaysStoppedAnimation<Color>(
+                                        Color(0xFFFF7A00),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
                             ),
                           ),
-                        );
-                      },
-                    ),
-                  ],
-                ),
+
+                        // Error state in conversation
+                        if (state is SearchError)
+                          SliverPadding(
+                            padding: EdgeInsets.all(gutter),
+                            sliver: SliverToBoxAdapter(
+                              child: _buildErrorView(context, state),
+                            ),
+                          ),
+
+                        // Empty search feedback
+                        if (state is SearchEmpty)
+                          SliverPadding(
+                            padding: EdgeInsets.all(gutter),
+                            sliver: SliverToBoxAdapter(
+                              child: _buildEmptyNotice(context, state.query),
+                            ),
+                          ),
+                      ] else ...[
+                        // Initial Search Exploration Feed (Suggested Searches, Recents, Example Queries)
+                        SliverPadding(
+                          padding: EdgeInsets.symmetric(horizontal: gutter),
+                          sliver: SliverList(
+                            delegate: SliverChildListDelegate([
+                              // Suggested Searches 2-Column Grid
+                              SuggestedSearchesGrid(
+                                onSearchTap: _onSearchSubmitted,
+                              ),
+
+                              const SizedBox(height: AppSpacing.xl),
+
+                              // Recent Searches Chips
+                              if (state is SearchInitial &&
+                                  state.recentSearches.isNotEmpty) ...[
+                                RecentSearchesChips(
+                                  recentSearches: state.recentSearches,
+                                  onSelectRecent: _onSearchSubmitted,
+                                  onClear: () {
+                                    context
+                                        .read<SearchCubit>()
+                                        .clearRecentSearches();
+                                  },
+                                ),
+                                const SizedBox(height: AppSpacing.xl),
+                              ],
+
+                              // Example Queries
+                              ExampleQueriesView(
+                                onQueryTap: _onSearchSubmitted,
+                              ),
+
+                              const SizedBox(height: AppSpacing.xl),
+                            ]),
+                          ),
+                        ),
+                      ],
+
+                      // Bottom spacing padding so content is never obscured by the persistent input bar
+                      const SliverToBoxAdapter(child: SizedBox(height: 84)),
+                    ],
+                  );
+                },
+              ),
+            ),
+
+            // Persistent Floating AI Input Capsule anchored at the bottom
+            Padding(
+              padding: EdgeInsets.fromLTRB(
+                gutter,
+                AppSpacing.xs,
+                gutter,
+                AppSpacing.sm,
+              ),
+              child: BlocBuilder<SearchCubit, SearchState>(
+                builder: (context, state) {
+                  return PersistentAiInputBar(
+                    controller: _searchController,
+                    focusNode: _focusNode,
+                    isLoading: state is SearchLoading,
+                    onSubmitted: _onSearchSubmitted,
+                    onMicTap: () {
+                      _onSearchSubmitted(
+                        'Show me all the pictures of hilly areas',
+                      );
+                    },
+                  );
+                },
               ),
             ),
           ],
         ),
-      );
-    }
-  }
-
-  Widget _buildInitialView(BuildContext context, SearchInitial state) {
-    final colors = context.colors;
-    final isIOS = Theme.of(context).platform == TargetPlatform.iOS;
-
-    return ListView(
-      padding: const EdgeInsets.all(AppSpacing.lg),
-      children: [
-        // Suggested prompts
-        SuggestedPromptsView(
-          prompts: state.suggestedPrompts,
-          onPromptSelected: _onSelectPrompt,
-        ),
-
-        const SizedBox(height: AppSpacing.xl),
-
-        // Recent search history
-        if (state.recentSearches.isNotEmpty) ...[
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Row(
-                children: [
-                  Icon(
-                    isIOS ? CupertinoIcons.clock : Icons.history_rounded,
-                    size: 16,
-                    color: colors.textMuted,
-                  ),
-                  const SizedBox(width: AppSpacing.xs),
-                  Text(
-                    'Recent Searches',
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
-                      color: colors.textPrimary,
-                    ),
-                  ),
-                ],
-              ),
-              GestureDetector(
-                onTap: () => context.read<SearchCubit>().clearRecentSearches(),
-                child: Text(
-                  'Clear',
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: colors.accent,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: AppSpacing.sm),
-          ...state.recentSearches.map((query) {
-            return ListTile(
-              contentPadding: EdgeInsets.zero,
-              leading: Icon(
-                isIOS ? CupertinoIcons.search : Icons.search_rounded,
-                size: 18,
-                color: colors.textMuted,
-              ),
-              title: Text(
-                query,
-                style: TextStyle(color: colors.textPrimary, fontSize: 14),
-              ),
-              trailing: Icon(
-                isIOS ? CupertinoIcons.arrow_up_left : Icons.north_west,
-                size: 16,
-                color: colors.textMuted,
-              ),
-              onTap: () => _onSelectPrompt(query),
-            );
-          }),
-        ],
-      ],
-    );
-  }
-
-  Widget _buildLoadingView(BuildContext context, String query) {
-    final colors = context.colors;
-
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const AdaptiveProgressIndicator(size: AppSpacing.xxxl),
-          const SizedBox(height: AppSpacing.lg),
-          Text(
-            'Searching photos for "$query"...',
-            style: TextStyle(
-              fontSize: 15,
-              color: colors.textSecondary,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-        ],
       ),
     );
   }
 
-  Widget _buildResultsView(BuildContext context, SearchSuccess state) {
-    final colors = context.colors;
-    final columns = Responsive.galleryColumns(context);
-    final gutter = Responsive.horizontalGutter(context);
-    final photoRepo = context.read<GalleryCubit>().photoRepository;
-
-    return CustomScrollView(
-      slivers: [
-        // Results count header
-        SliverToBoxAdapter(
-          child: Padding(
-            padding: EdgeInsets.fromLTRB(
-              gutter,
-              AppSpacing.md,
-              gutter,
-              AppSpacing.sm,
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  'Found ${state.results.length} photos for "${state.query}"',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.bold,
-                    color: colors.textPrimary,
-                  ),
-                ),
-                GestureDetector(
-                  onTap: _onClear,
-                  child: Text(
-                    'Clear',
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: colors.accent,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-
-        // Responsive grid
-        SliverPadding(
-          padding: EdgeInsets.symmetric(
-            horizontal: gutter,
-            vertical: AppSpacing.sm,
-          ),
-          sliver: SliverGrid(
-            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: columns,
-              mainAxisSpacing: AppSpacing.xs,
-              crossAxisSpacing: AppSpacing.xs,
-              childAspectRatio: 1.0,
-            ),
-            delegate: SliverChildBuilderDelegate((context, index) {
-              final photo = state.results[index];
-              return PhotoThumbnailTile(
-                photo: photo,
-                photoRepository: photoRepo,
-                onTap: () {
-                  context.push(
-                    '/photo-viewer',
-                    extra: PhotoViewerArgs(
-                      photos: state.results,
-                      initialIndex: index,
-                    ),
-                  );
-                },
-              );
-            }, childCount: state.results.length),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildEmptyView(BuildContext context, SearchEmpty state) {
-    final colors = context.colors;
-    final textTheme = Theme.of(context).textTheme;
-
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(AppSpacing.xl),
+  Widget _buildEmptyNotice(BuildContext context, String query) {
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.lg),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF9FAFB),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: const Color(0xFFE5E7EB)),
+      ),
       child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const SizedBox(height: AppSpacing.xxl),
-          Icon(
-            Icons.search_off_rounded,
-            size: AppSpacing.xxxl * 1.5,
-            color: colors.textMuted,
-          ),
-          const SizedBox(height: AppSpacing.lg),
+        children: const [
           Text(
             'No Photos Found',
-            style: textTheme.headlineMedium?.copyWith(
-              color: colors.textPrimary,
-              fontWeight: FontWeight.bold,
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w700,
+              color: Color(0xFF111827),
             ),
-            textAlign: TextAlign.center,
           ),
-          const SizedBox(height: AppSpacing.sm),
+          SizedBox(height: 6),
           Text(
-            'We couldn\'t find any photos matching "${state.query}". Try a different natural-language prompt.',
-            style: textTheme.bodyMedium?.copyWith(color: colors.textSecondary),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: AppSpacing.xl),
-          if (state.suggestedPrompts.isNotEmpty)
-            SuggestedPromptsView(
-              title: 'Try One of These Suggestions',
-              prompts: state.suggestedPrompts,
-              onPromptSelected: _onSelectPrompt,
+            'Try One of These Suggestions',
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+              color: Color(0xFF6B7280),
             ),
+          ),
         ],
       ),
     );
   }
 
   Widget _buildErrorView(BuildContext context, SearchError state) {
-    final colors = context.colors;
-    final textTheme = Theme.of(context).textTheme;
-
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.xl),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.error_outline_rounded,
-              size: AppSpacing.xxxl * 1.5,
-              color: colors.error,
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.lg),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFFF0F1),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: const Color(0xFFFECDD3)),
+      ),
+      child: Column(
+        children: [
+          const Text(
+            'Search Failed',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w700,
+              color: Color(0xFFBE123C),
             ),
-            const SizedBox(height: AppSpacing.lg),
-            Text(
-              'Search Failed',
-              style: textTheme.headlineMedium?.copyWith(
-                color: colors.textPrimary,
-                fontWeight: FontWeight.bold,
+          ),
+          const SizedBox(height: 6),
+          Text(
+            state.message,
+            style: const TextStyle(
+              fontSize: 14,
+              color: Color(0xFF4B5563),
+              height: 1.3,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: AppSpacing.md),
+          ElevatedButton(
+            onPressed: () {
+              context.read<SearchCubit>().search(state.query);
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFFF7A00),
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(14),
               ),
-              textAlign: TextAlign.center,
+              elevation: 0,
             ),
-            const SizedBox(height: AppSpacing.sm),
-            Text(
-              state.message,
-              style: textTheme.bodyMedium?.copyWith(
-                color: colors.textSecondary,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: AppSpacing.xl),
-            AdaptiveButton(
-              text: 'Try Again',
-              onPressed: () => context.read<SearchCubit>().search(state.query),
-            ),
-          ],
-        ),
+            child: const Text('Try Again'),
+          ),
+        ],
       ),
     );
   }

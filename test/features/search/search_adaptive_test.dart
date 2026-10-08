@@ -8,6 +8,7 @@ import 'package:gallery/features/gallery/presentation/cubit/gallery_cubit.dart';
 import 'package:gallery/features/search/data/mock_ai_photo_search_repository.dart';
 import 'package:gallery/features/search/presentation/cubit/search_cubit.dart';
 import 'package:gallery/features/search/presentation/screens/search_screen.dart';
+import 'package:gallery/features/search/presentation/widgets/suggested_prompts_view.dart';
 
 void main() {
   group(
@@ -47,54 +48,59 @@ void main() {
         );
       }
 
+      Widget createAdaptivePromptsApp({required TargetPlatform platform}) {
+        return MaterialApp(
+          theme: ThemeData(platform: platform),
+          home: Scaffold(
+            body: SuggestedPromptsView(
+              prompts: const ['dogs', 'beach'],
+              onPromptSelected: (_) {},
+            ),
+          ),
+        );
+      }
+
       testWidgets(
-        'iOS target renders CupertinoSearchTextField, Cupertino pills, and Cupertino icons',
+        'SuggestedPromptsView renders CupertinoButton pills and Cupertino icons on iOS',
+        (tester) async {
+          await tester.pumpWidget(
+            createAdaptivePromptsApp(platform: TargetPlatform.iOS),
+          );
+          await tester.pumpAndSettle();
+
+          expect(find.byType(CupertinoButton), findsWidgets);
+          expect(find.byType(ActionChip), findsNothing);
+          expect(find.byIcon(CupertinoIcons.sparkles), findsOneWidget);
+          expect(find.byIcon(CupertinoIcons.search), findsWidgets);
+        },
+      );
+
+      testWidgets(
+        'SuggestedPromptsView renders Material ActionChips and Material icons on Android',
+        (tester) async {
+          await tester.pumpWidget(
+            createAdaptivePromptsApp(platform: TargetPlatform.android),
+          );
+          await tester.pumpAndSettle();
+
+          expect(find.byType(ActionChip), findsWidgets);
+          expect(find.byType(CupertinoButton), findsNothing);
+          expect(find.byIcon(Icons.auto_awesome), findsOneWidget);
+          expect(find.byIcon(Icons.search_rounded), findsWidgets);
+        },
+      );
+
+      testWidgets(
+        'SearchScreen renders conversational layout safely across platforms',
         (tester) async {
           await tester.pumpWidget(
             createAdaptiveSearchApp(platform: TargetPlatform.iOS),
           );
           await tester.pumpAndSettle();
 
-          // 1. Cupertino search input and cancel button
-          expect(find.byType(CupertinoSearchTextField), findsOneWidget);
-          expect(
-            find.widgetWithText(CupertinoButton, 'Cancel'),
-            findsOneWidget,
-          );
-          expect(find.byIcon(Icons.arrow_back), findsNothing);
-
-          // 2. Cupertino prompt pills
-          expect(find.byType(CupertinoButton), findsWidgets);
-          expect(find.byType(ActionChip), findsNothing);
-
-          // 3. Cupertino icons in prompts and recents
-          expect(find.byIcon(CupertinoIcons.sparkles), findsWidgets);
-          expect(find.byIcon(CupertinoIcons.clock), findsOneWidget);
-          expect(find.byIcon(CupertinoIcons.arrow_up_left), findsWidgets);
-        },
-      );
-
-      testWidgets(
-        'Android target renders Material SearchBar, ActionChips, and Material icons',
-        (tester) async {
-          await tester.pumpWidget(
-            createAdaptiveSearchApp(platform: TargetPlatform.android),
-          );
-          await tester.pumpAndSettle();
-
-          // 1. Material search input and back icon button
+          expect(find.text('AI Search'), findsOneWidget);
+          expect(find.text('Suggested Searches'), findsOneWidget);
           expect(find.byType(TextField), findsOneWidget);
-          expect(find.byType(CupertinoSearchTextField), findsNothing);
-          expect(find.byIcon(Icons.arrow_back), findsOneWidget);
-          expect(find.text('Cancel'), findsNothing);
-
-          // 2. Material 3 ActionChips
-          expect(find.byType(ActionChip), findsWidgets);
-
-          // 3. Material icons in prompts and recents
-          expect(find.byIcon(Icons.auto_awesome), findsWidgets);
-          expect(find.byIcon(Icons.history_rounded), findsOneWidget);
-          expect(find.byIcon(Icons.north_west), findsWidgets);
         },
       );
     },

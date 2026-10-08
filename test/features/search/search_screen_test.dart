@@ -209,5 +209,100 @@ void main() {
       // Still fails because query is unchanged 'error_simulate'
       expect(find.text('Search Failed'), findsOneWidget);
     });
+
+    testWidgets(
+      'conversational visual query (hilly areas) renders AI explanation, photo row with overflow, and source context',
+      (tester) async {
+        await tester.pumpWidget(createSearchScreenTestApp());
+        await tester.pumpAndSettle();
+
+        final inputField = find.byType(TextField);
+        await tester.enterText(
+          inputField,
+          'Show me all the pictures of hilly areas',
+        );
+        await tester.testTextInput.receiveAction(TextInputAction.done);
+        await tester.pumpAndSettle();
+
+        // User bubble
+        expect(
+          find.text('Show me all the pictures of hilly areas'),
+          findsWidgets,
+        );
+
+        // AI message & source context
+        expect(
+          find.text('Here are 42 photos of hilly areas from your gallery.'),
+          findsOneWidget,
+        );
+        expect(find.text('From your gallery'), findsOneWidget);
+
+        // Photo row and overflow card (+39)
+        expect(find.byType(PhotoThumbnailTile), findsWidgets);
+        expect(find.text('+39'), findsOneWidget);
+        expect(find.text('See all'), findsOneWidget);
+      },
+    );
+
+    testWidgets(
+      'conversational document query (internet bill) renders structured bill evidence card',
+      (tester) async {
+        await tester.pumpWidget(createSearchScreenTestApp());
+        await tester.pumpAndSettle();
+
+        final inputField = find.byType(TextField);
+        await tester.enterText(
+          inputField,
+          'What is the last date to pay the internet bill?',
+        );
+        await tester.testTextInput.receiveAction(TextInputAction.done);
+        await tester.pumpAndSettle();
+
+        // AI text explanation
+        expect(
+          find.text(
+            'Based on the payment receipt screenshots in your gallery, the last date to pay your internet bill is:',
+          ),
+          findsOneWidget,
+        );
+
+        // Structured evidence card
+        expect(find.text('25 September 2025'), findsOneWidget);
+        expect(find.text('PTCL Broadband'), findsOneWidget);
+        expect(
+          find.text('Based on 1 payment receipt in your gallery'),
+          findsOneWidget,
+        );
+      },
+    );
+
+    testWidgets(
+      'conversational financial query (subscription) renders itemized financial breakdown',
+      (tester) async {
+        await tester.pumpWidget(createSearchScreenTestApp());
+        await tester.pumpAndSettle();
+
+        final inputField = find.byType(TextField);
+        await tester.enterText(
+          inputField,
+          'How much did I spend on subscription last month?',
+        );
+        await tester.testTextInput.receiveAction(TextInputAction.done);
+        await tester.pumpAndSettle();
+
+        // AI summary
+        expect(
+          find.text('You spent Rs 8,450 on subscriptions last month.'),
+          findsOneWidget,
+        );
+
+        // Financial card
+        expect(find.text('Monthly Subscriptions'), findsOneWidget);
+        expect(find.text('Rs 8,450'), findsWidgets);
+        expect(find.text('Netflix 4K Premium'), findsOneWidget);
+        expect(find.text('Spotify Family'), findsOneWidget);
+        expect(find.text('AWS Cloud Server'), findsOneWidget);
+      },
+    );
   });
 }

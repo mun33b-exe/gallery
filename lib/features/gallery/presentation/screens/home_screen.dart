@@ -12,7 +12,6 @@ import '../../domain/category_model.dart';
 import '../../domain/photo_model.dart';
 import '../cubit/gallery_cubit.dart';
 import '../cubit/gallery_state.dart';
-import '../widgets/category_filter_bar.dart';
 import '../widgets/floating_library_nav_bar.dart';
 import '../widgets/gallery_assistant_card.dart';
 import '../widgets/recent_asymmetric_grid.dart';
@@ -154,18 +153,6 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
 
                   const SizedBox(height: AppSpacing.lg),
-
-                  // Category Filter Bar (if multiple categories available)
-                  if (state.categories.isNotEmpty)
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: AppSpacing.md),
-                      child: CategoryFilterBar(
-                        categories: state.categories,
-                        selectedCategory: state.selectedCategory,
-                        onCategorySelected: (cat) =>
-                            context.read<GalleryCubit>().selectCategory(cat),
-                      ),
-                    ),
 
                   // Suggestions / Memories Carousel
                   SuggestionsCarousel(
@@ -379,16 +366,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
     return Column(
       children: [
-        if (state.categories.isNotEmpty && category != null)
-          Padding(
-            padding: const EdgeInsets.only(top: AppSpacing.xs),
-            child: CategoryFilterBar(
-              categories: state.categories,
-              selectedCategory: category,
-              onCategorySelected: (cat) =>
-                  context.read<GalleryCubit>().selectCategory(cat),
-            ),
-          ),
         Expanded(
           child: Center(
             child: Padding(

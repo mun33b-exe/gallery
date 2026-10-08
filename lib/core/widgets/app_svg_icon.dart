@@ -25,17 +25,24 @@ abstract final class AppIcons {
   static const String users = 'assets/icons/users.svg';
 }
 
-/// Reusable SVG icon widget that renders icons from `assets/icons/` with tint and size.
+/// Reusable SVG icon widget that renders icons from `assets/icons/` with tint, size, and rotation.
 class AppSvgIcon extends StatelessWidget {
   final String assetName;
   final double? size;
   final Color? color;
+  final int quarterTurns;
 
-  const AppSvgIcon(this.assetName, {super.key, this.size = 24, this.color});
+  const AppSvgIcon(
+    this.assetName, {
+    super.key,
+    this.size = 24,
+    this.color,
+    this.quarterTurns = 0,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return SvgPicture.asset(
+    Widget icon = SvgPicture.asset(
       assetName,
       width: size,
       height: size,
@@ -43,5 +50,9 @@ class AppSvgIcon extends StatelessWidget {
           ? ColorFilter.mode(color!, BlendMode.srcIn)
           : null,
     );
+    if (quarterTurns != 0) {
+      icon = RotatedBox(quarterTurns: quarterTurns, child: icon);
+    }
+    return icon;
   }
 }

@@ -3,14 +3,16 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:gallery/app/theme/theme_cubit.dart';
 import 'package:gallery/features/gallery/data/mock_photo_repository.dart';
+import 'package:gallery/features/gallery/domain/category_model.dart';
 import 'package:gallery/features/gallery/domain/photo_model.dart';
 import 'package:gallery/features/gallery/presentation/cubit/gallery_cubit.dart';
+import 'package:gallery/features/gallery/presentation/cubit/gallery_state.dart';
 import 'package:gallery/features/gallery/presentation/screens/home_screen.dart';
 import 'package:gallery/features/gallery/presentation/widgets/category_filter_bar.dart';
 import 'package:gallery/features/gallery/presentation/widgets/photo_thumbnail_tile.dart';
 
 void main() {
-  group('GalleryScreen Category Widget Tests', () {
+  group('CategoryFilterBar Widget Tests', () {
     late MockPhotoRepository mockRepo;
     late GalleryCubit galleryCubit;
     late List<PhotoModel> testPhotos;
@@ -43,6 +45,22 @@ void main() {
       await galleryCubit.close();
     });
 
+    Widget createTestFilterBar({
+      required List<CategoryModel> categories,
+      required CategoryModel selectedCategory,
+      required ValueChanged<CategoryModel> onCategorySelected,
+    }) {
+      return MaterialApp(
+        home: Scaffold(
+          body: CategoryFilterBar(
+            categories: categories,
+            selectedCategory: selectedCategory,
+            onCategorySelected: onCategorySelected,
+          ),
+        ),
+      );
+    }
+
     Widget createTestGallery() {
       return MultiBlocProvider(
         providers: [
@@ -56,31 +74,93 @@ void main() {
     testWidgets('renders CategoryFilterBar with chips and counts', (
       tester,
     ) async {
-      await tester.pumpWidget(createTestGallery());
+      final categories = [
+        const CategoryModel(
+          id: 'all',
+          title: 'All Photos',
+          type: CategoryType.all,
+          photoCount: 2,
+        ),
+        const CategoryModel(
+          id: 'favorites',
+          title: 'Favorites',
+          type: CategoryType.favorites,
+          photoCount: 1,
+        ),
+        const CategoryModel(
+          id: 'screenshots',
+          title: 'Screenshots',
+          type: CategoryType.screenshots,
+          photoCount: 0,
+        ),
+      ];
+
+      await tester.pumpWidget(
+        createTestFilterBar(
+          categories: categories,
+          selectedCategory: categories.first,
+          onCategorySelected: (_) {},
+        ),
+      );
       await tester.pumpAndSettle();
 
       expect(find.byType(CategoryFilterBar), findsOneWidget);
       expect(find.text('All Photos (2)'), findsOneWidget);
       expect(find.text('Favorites (1)'), findsOneWidget);
       expect(find.text('Screenshots (0)'), findsOneWidget);
-      expect(find.byType(PhotoThumbnailTile), findsNWidgets(2));
     });
 
-    testWidgets('tapping Favorites filter chip updates visible photos', (
-      tester,
-    ) async {
-      await tester.pumpWidget(createTestGallery());
-      await tester.pumpAndSettle();
+    testWidgets(
+      'tapping Favorites filter chip triggers onCategorySelected callback',
+      (tester) async {
+        final categories = [
+          const CategoryModel(
+            id: 'all',
+            title: 'All Photos',
+            type: CategoryType.all,
+            photoCount: 2,
+          ),
+          const CategoryModel(
+            id: 'favorites',
+            title: 'Favorites',
+            type: CategoryType.favorites,
+            photoCount: 1,
+          ),
+        ];
 
-      expect(find.byType(PhotoThumbnailTile), findsNWidgets(2));
+        CategoryModel? selected;
+        await tester.pumpWidget(
+          createTestFilterBar(
+            categories: categories,
+            selectedCategory: categories.first,
+            onCategorySelected: (cat) => selected = cat,
+          ),
+        );
+        await tester.pumpAndSettle();
 
-      // Tap on Favorites chip
-      await tester.tap(find.text('Favorites (1)'));
-      await tester.pumpAndSettle();
+        await tester.tap(find.text('Favorites (1)'));
+        await tester.pumpAndSettle();
 
-      // Only 1 photo (the favorite) is rendered
-      expect(find.byType(PhotoThumbnailTile), findsOneWidget);
-    });
+        expect(selected?.type, CategoryType.favorites);
+      },
+    );
+
+    testWidgets(
+      'tapping Favorites shortcut in GalleryAssistantCard filters to favorite photos',
+      (tester) async {
+        await tester.pumpWidget(createTestGallery());
+        await tester.pumpAndSettle();
+
+        expect(find.byType(PhotoThumbnailTile), findsNWidgets(2));
+
+        // Tap on Favorites shortcut pill in GalleryAssistantCard
+        await tester.tap(find.text('Favorites'));
+        await tester.pumpAndSettle();
+
+        // Only 1 photo (the favorite) is rendered
+        expect(find.byType(PhotoThumbnailTile), findsOneWidget);
+      },
+    );
 
     testWidgets(
       'selecting empty category renders contextual empty state and View All Photos button',
@@ -88,10 +168,12 @@ void main() {
         await tester.pumpWidget(createTestGallery());
         await tester.pumpAndSettle();
 
-        // Scroll Screenshots chip into view and tap
-        await tester.ensureVisible(find.text('Screenshots (0)'));
-        await tester.pumpAndSettle();
-        await tester.tap(find.text('Screenshots (0)'));
+        final loaded = galleryCubit.state as GalleryLoaded;
+        // Select empty screenshots category
+        final screenshotsCat = loaded.categories.firstWhere(
+          (c) => c.type == CategoryType.screenshots,
+        );
+        await galleryCubit.selectCategory(screenshotsCat);
         await tester.pumpAndSettle();
 
         // Contextual empty state is rendered
@@ -102,17 +184,11 @@ void main() {
         );
         expect(find.text('View All Photos'), findsOneWidget);
 
-        // CategoryFilterBar remains visible so the user can easily switch categories
-        expect(find.byType(CategoryFilterBar), findsOneWidget);
-
         // Tapping 'View All Photos' returns to all photos
         await tester.tap(find.text('View All Photos'));
         await tester.pumpAndSettle();
 
         expect(find.byType(PhotoThumbnailTile), findsNWidgets(2));
-        await tester.drag(find.byType(CategoryFilterBar), const Offset(500, 0));
-        await tester.pumpAndSettle();
-        expect(find.text('All Photos (2)'), findsOneWidget);
       },
     );
   });
