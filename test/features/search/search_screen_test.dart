@@ -304,5 +304,56 @@ void main() {
         expect(find.text('AWS Cloud Server'), findsOneWidget);
       },
     );
+
+    testWidgets(
+      'collapsible header renders large title at top of scroll and reveals compact title when scrolled',
+      (tester) async {
+        await tester.pumpWidget(createSearchScreenTestApp());
+        await tester.pumpAndSettle();
+
+        // Initial state at top of scroll:
+        // Only 1 'AI Search' text exists in the tree (the large title)
+        expect(find.text('AI Search'), findsOneWidget);
+        expect(
+          find.text('Find photos, people, places and more'),
+          findsOneWidget,
+        );
+
+        // Circular back button is present and positioned
+        final backButton = find.byWidgetPredicate(
+          (w) => w is Semantics && w.properties.label == 'Back',
+        );
+        expect(backButton, findsOneWidget);
+
+        // Scroll down by dragging the scroll view
+        await tester.drag(find.byType(CustomScrollView), const Offset(0, -120));
+        await tester.pumpAndSettle();
+
+        // Scrolled state:
+        // The compact title is now visible in the pinned toolbar
+        expect(find.text('AI Search'), findsOneWidget);
+        // The large subtitle has scrolled out of view / faded out
+        expect(find.text('Find photos, people, places and more'), findsNothing);
+
+        // Circular back button remains visible and interactive
+        expect(backButton, findsOneWidget);
+      },
+    );
+
+    testWidgets(
+      'tapping back button in pinned collapsible header navigates back',
+      (tester) async {
+        await tester.pumpWidget(createSearchScreenTestApp());
+        await tester.pumpAndSettle();
+
+        final backButton = find.byWidgetPredicate(
+          (w) => w is Semantics && w.properties.label == 'Back',
+        );
+        expect(backButton, findsOneWidget);
+
+        await tester.tap(backButton);
+        await tester.pumpAndSettle();
+      },
+    );
   });
 }

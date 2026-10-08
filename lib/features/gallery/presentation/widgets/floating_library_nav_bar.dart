@@ -160,7 +160,10 @@ class FloatingLibraryNavBar extends StatelessWidget {
                             selected: selectedIndex == 1,
                             label: 'Explore tab',
                             child: InkWell(
-                              onTap: () => onIndexChanged?.call(1),
+                              onTap: () {
+                                onIndexChanged?.call(1);
+                                context.push('/all-photos');
+                              },
                               borderRadius: BorderRadius.circular(26),
                               child: Container(
                                 height: 52,

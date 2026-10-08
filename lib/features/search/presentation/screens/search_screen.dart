@@ -83,7 +83,10 @@ class _SearchScreenState extends State<SearchScreen> {
 
     return Scaffold(
       backgroundColor: Colors.white,
+      resizeToAvoidBottomInset: true,
       body: SafeArea(
+        top: false,
+        bottom: true,
         child: Column(
           children: [
             // Top Section & Conversation / Search Feed
@@ -109,23 +112,13 @@ class _SearchScreenState extends State<SearchScreen> {
                       parent: BouncingScrollPhysics(),
                     ),
                     slivers: [
-                      // Header: Circular Back button + Title & Subtitle
-                      SliverPadding(
-                        padding: EdgeInsets.fromLTRB(
-                          gutter,
-                          AppSpacing.sm,
-                          gutter,
-                          AppSpacing.md,
-                        ),
-                        sliver: SliverToBoxAdapter(
-                          child: AiSearchHeader(
-                            onBackTap: () {
-                              if (context.canPop()) {
-                                context.pop();
-                              }
-                            },
-                          ),
-                        ),
+                      // Header: Collapsible Sliver Header with Circular Back Button, Title & Subtitle, and Frosted Blur
+                      AiSearchHeader(
+                        onBackTap: () {
+                          if (context.canPop()) {
+                            context.pop();
+                          }
+                        },
                       ),
 
                       // If conversation has messages, render conversational feed
