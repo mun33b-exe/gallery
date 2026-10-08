@@ -71,7 +71,12 @@ void main() {
       expect(find.text('Settings'), findsOneWidget);
 
       // Scroll and tap Sign Out button
-      await tester.ensureVisible(find.text('Sign Out'));
+      await tester.scrollUntilVisible(
+        find.text('Sign Out'),
+        300,
+        scrollable: find.byType(Scrollable).last,
+      );
+      await tester.pumpAndSettle();
       await tester.tap(find.text('Sign Out'));
       await tester.pumpAndSettle();
 

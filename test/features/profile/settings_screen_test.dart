@@ -36,6 +36,15 @@ void main() {
       authRepo.dispose();
     });
 
+    void setLargeViewport(WidgetTester tester) {
+      tester.view.physicalSize = const Size(800, 2400);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(() {
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+      });
+    }
+
     Widget createSettingsTestApp({GoRouter? router}) {
       final testRouter =
           router ??
@@ -50,6 +59,11 @@ void main() {
                 path: '/profile',
                 builder: (context, state) =>
                     const Scaffold(body: Text('Profile Destination')),
+              ),
+              GoRoute(
+                path: '/home',
+                builder: (context, state) =>
+                    const Scaffold(body: Text('Home Destination')),
               ),
             ],
           );
@@ -67,6 +81,8 @@ void main() {
     testWidgets(
       'renders all settings sections: profile shortcut, theme selection, privacy banner, and app info',
       (tester) async {
+        setLargeViewport(tester);
+
         await tester.pumpWidget(createSettingsTestApp());
         await tester.pumpAndSettle();
 
@@ -80,12 +96,15 @@ void main() {
         expect(find.text('Photo Library Permission'), findsOneWidget);
         expect(find.text('About Application'), findsOneWidget);
         expect(find.text('1.0.0 (Build 1)'), findsOneWidget);
+        expect(find.text('Sign Out'), findsOneWidget);
       },
     );
 
     testWidgets('tapping a theme option updates ThemeCubit state', (
       tester,
     ) async {
+      setLargeViewport(tester);
+
       await tester.pumpWidget(createSettingsTestApp());
       await tester.pumpAndSettle();
 
@@ -103,6 +122,8 @@ void main() {
     testWidgets('tapping profile shortcut navigates to /profile', (
       tester,
     ) async {
+      setLargeViewport(tester);
+
       await tester.pumpWidget(createSettingsTestApp());
       await tester.pumpAndSettle();
 
@@ -115,23 +136,90 @@ void main() {
       expect(find.text('Profile Destination'), findsOneWidget);
     });
 
+    testWidgets('tapping profile avatar in header navigates to /profile', (
+      tester,
+    ) async {
+      setLargeViewport(tester);
+
+      await tester.pumpWidget(createSettingsTestApp());
+      await tester.pumpAndSettle();
+
+      final profileAvatar = find.bySemanticsLabel('Open profile');
+      expect(profileAvatar, findsOneWidget);
+
+      await tester.tap(profileAvatar);
+      await tester.pumpAndSettle();
+
+      expect(find.text('Profile Destination'), findsOneWidget);
+    });
+
     testWidgets(
       'tapping Manage in permissions tile opens app settings on GalleryCubit',
       (tester) async {
+        setLargeViewport(tester);
+
         await tester.pumpWidget(createSettingsTestApp());
         await tester.pumpAndSettle();
 
         expect(photoRepo.appSettingsOpened, isFalse);
 
-        final manageButton = find.widgetWithText(TextButton, 'Manage');
+        final manageButton = find.text('Manage');
         expect(manageButton, findsOneWidget);
 
-        await tester.ensureVisible(manageButton);
         await tester.tap(manageButton);
         await tester.pumpAndSettle();
 
         expect(photoRepo.appSettingsOpened, isTrue);
       },
     );
+
+    testWidgets(
+      'tapping Sign Out shows confirmation dialog and cancels cleanly',
+      (tester) async {
+        setLargeViewport(tester);
+
+        await tester.pumpWidget(createSettingsTestApp());
+        await tester.pumpAndSettle();
+
+        final signOutBtn = find.text('Sign Out');
+        expect(signOutBtn, findsOneWidget);
+        await tester.tap(signOutBtn);
+        await tester.pumpAndSettle();
+
+        expect(
+          find.text('Are you sure you want to sign out of your account?'),
+          findsOneWidget,
+        );
+
+        final cancelBtn = find.text('Cancel');
+        await tester.tap(cancelBtn);
+        await tester.pumpAndSettle();
+
+        expect(
+          find.text('Are you sure you want to sign out of your account?'),
+          findsNothing,
+        );
+      },
+    );
+
+    testWidgets('confirming Sign Out triggers AuthCubit.logout', (
+      tester,
+    ) async {
+      setLargeViewport(tester);
+
+      await tester.pumpWidget(createSettingsTestApp());
+      await tester.pumpAndSettle();
+
+      final signOutBtn = find.text('Sign Out');
+      await tester.tap(signOutBtn);
+      await tester.pumpAndSettle();
+
+      // Find the Sign Out action inside the dialog
+      final confirmSignOutBtn = find.widgetWithText(TextButton, 'Sign Out');
+      await tester.tap(confirmSignOutBtn);
+      await tester.pumpAndSettle();
+
+      expect(authRepo.currentUser, isNull);
+    });
   });
 }
