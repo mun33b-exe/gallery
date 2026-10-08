@@ -136,21 +136,21 @@ void main() {
       expect(find.text('Profile Destination'), findsOneWidget);
     });
 
-    testWidgets('tapping profile avatar in header navigates to /profile', (
-      tester,
-    ) async {
+    testWidgets('tapping back button in header navigates back', (tester) async {
       setLargeViewport(tester);
 
       await tester.pumpWidget(createSettingsTestApp());
       await tester.pumpAndSettle();
 
-      final profileAvatar = find.bySemanticsLabel('Open profile');
-      expect(profileAvatar, findsOneWidget);
+      final backBtn = find.byWidgetPredicate(
+        (w) => w is Semantics && w.properties.label == 'Back',
+      );
+      expect(backBtn, findsOneWidget);
 
-      await tester.tap(profileAvatar);
+      await tester.tap(backBtn);
       await tester.pumpAndSettle();
 
-      expect(find.text('Profile Destination'), findsOneWidget);
+      expect(find.text('Home Destination'), findsOneWidget);
     });
 
     testWidgets(

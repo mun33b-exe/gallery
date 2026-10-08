@@ -46,7 +46,7 @@ class SettingsScreen extends StatelessWidget {
               padding: EdgeInsets.symmetric(horizontal: gutter, vertical: 16),
               sliver: SliverList(
                 delegate: SliverChildListDelegate([
-                  // 1. Top Header: Back Button, Title "Settings", Profile Avatar
+                  // 1. Top Header: Back Button, Title "Settings"
                   SettingsHeader(
                     onBackTap: () {
                       if (context.canPop()) {
@@ -55,7 +55,6 @@ class SettingsScreen extends StatelessWidget {
                         context.go('/home');
                       }
                     },
-                    onProfileTap: () => context.push('/profile'),
                   ),
 
                   const SizedBox(height: 24),

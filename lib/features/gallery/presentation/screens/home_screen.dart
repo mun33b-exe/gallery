@@ -189,11 +189,11 @@ class _HomeScreenState extends State<HomeScreen> {
           ],
         ),
 
-        // Floating Bottom Navigation Bar
+        // Floating Bottom Navigation Bar with Frosted Glass Blur & Vignette
         Positioned(
           left: 0,
           right: 0,
-          bottom: 24,
+          bottom: 0,
           child: FloatingLibraryNavBar(
             selectedIndex: _selectedNavIndex,
             onIndexChanged: (idx) {

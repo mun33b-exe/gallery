@@ -7,13 +7,8 @@ import 'package:gallery/core/widgets/app_svg_icon.dart';
 /// and a circular profile avatar button with an orange status dot.
 class SettingsHeader extends StatelessWidget {
   final VoidCallback onBackTap;
-  final VoidCallback onProfileTap;
 
-  const SettingsHeader({
-    super.key,
-    required this.onBackTap,
-    required this.onProfileTap,
-  });
+  const SettingsHeader({super.key, required this.onBackTap});
 
   @override
   Widget build(BuildContext context) {
@@ -71,8 +66,6 @@ class SettingsHeader extends StatelessWidget {
             ),
           ),
         ),
-
-        // Circular Profile Button with Orange Status Dot
       ],
     );
   }
