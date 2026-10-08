@@ -11,6 +11,7 @@ import '../../features/auth/presentation/screens/login_screen.dart';
 import '../../features/auth/presentation/screens/register_screen.dart';
 import '../../features/auth/presentation/screens/splash_screen.dart';
 import '../../features/gallery/presentation/cubit/gallery_cubit.dart';
+import '../../features/gallery/presentation/screens/all_photos_screen.dart';
 import '../../features/gallery/presentation/screens/home_screen.dart';
 import '../../features/gallery/presentation/screens/photo_viewer_screen.dart';
 import '../../features/profile/presentation/screens/profile_screen.dart';
@@ -42,6 +43,7 @@ class AppRouter {
   static const String registerPath = '/register';
   static const String forgotPasswordPath = '/forgot-password';
   static const String homePath = '/home';
+  static const String allPhotosPath = '/all-photos';
   static const String photoViewerPath = '/photo-viewer';
   static const String searchPath = '/search';
   static const String profilePath = '/profile';
@@ -105,6 +107,10 @@ class AppRouter {
         GoRoute(
           path: homePath,
           builder: (context, state) => const HomeScreen(),
+        ),
+        GoRoute(
+          path: allPhotosPath,
+          builder: (context, state) => const AllPhotosScreen(),
         ),
         GoRoute(
           path: photoViewerPath,

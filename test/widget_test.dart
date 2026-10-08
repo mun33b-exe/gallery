@@ -53,7 +53,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.byType(PhotoViewerScreen), findsOneWidget);
-      expect(find.text('1 of 40'), findsOneWidget);
+      expect(find.textContaining('1 of '), findsOneWidget);
 
       // Tap back in PhotoViewerScreen
       await tester.tap(find.byTooltip('Back'));

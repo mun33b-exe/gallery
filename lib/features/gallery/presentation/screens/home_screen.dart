@@ -164,12 +164,13 @@ class _HomeScreenState extends State<HomeScreen> {
 
                   const SizedBox(height: AppSpacing.lg),
 
-                  // Recent Asymmetric Photo Section
+                  // Recent Asymmetric Photo Section (strictly 2 preview rows / max 5 photos)
                   RecentAsymmetricGrid(
                     photos: state.photos,
                     photoRepository: photoRepo,
                     onPhotoTap: (photo, index) =>
                         _openPhotoViewer(state.photos, index),
+                    onSeeAllTap: () => context.push('/all-photos'),
                   ),
 
                   // Lazy Pagination Indicator
@@ -201,7 +202,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 _selectedNavIndex = idx;
               });
               if (idx == 1) {
-                context.push('/search');
+                context.push('/all-photos');
               }
             },
           ),
